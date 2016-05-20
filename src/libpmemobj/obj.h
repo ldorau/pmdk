@@ -165,7 +165,7 @@ struct pmemobjpool {
 
 	PMEMmutex rootlock;	/* root object lock */
 	int is_master_replica;
-	char unused2[1804];
+	char unused2[1796];
 };
 
 /*
