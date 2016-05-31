@@ -137,6 +137,14 @@ rm_poolset_cb(const char *part_file, void *arg)
 {
 	outv(2, "part file   : %s\n", part_file);
 
+	if (part_file == NULL) {
+		outv(1, "warning: path of part file is NULL");
+		if (force)
+			return 0;
+		else
+			return -1;
+	}
+
 	int exists = access(part_file, F_OK) == 0;
 	if (!exists) {
 		/*
