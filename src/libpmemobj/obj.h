@@ -109,6 +109,14 @@ typedef void (*drain_local_fn)(void);
 typedef void *(*memcpy_local_fn)(void *dest, const void *src, size_t len);
 typedef void *(*memset_local_fn)(void *dest, int c, size_t len);
 
+typedef void (*persist_remote_fn)(PMEMobjpool *pop, const void *, size_t);
+typedef void (*flush_remote_fn)(PMEMobjpool *pop, const void *, size_t);
+typedef void (*drain_remote_fn)(PMEMobjpool *pop);
+typedef void *(*memcpy_remote_fn)(PMEMobjpool *pop, void *dest, const void *src,
+								size_t len);
+typedef void *(*memset_remote_fn)(PMEMobjpool *pop, void *dest, int c,
+								size_t len);
+
 typedef void (*persist_fn)(PMEMobjpool *pop, const void *, size_t);
 typedef void (*flush_fn)(PMEMobjpool *pop, const void *, size_t);
 typedef void (*drain_fn)(PMEMobjpool *pop);
@@ -165,7 +173,11 @@ struct pmemobjpool {
 
 	PMEMmutex rootlock;	/* root object lock */
 	int is_master_replica;
-	char unused2[1796];
+
+	/* remote replica section */
+	void *remote;	/* RPMEMpool opaque handle if it is a remote replica */
+
+	char unused2[1780];
 };
 
 /*
