@@ -51,6 +51,10 @@ expect_normal_exit $PMEMPOOL.static-nondebug rm -f -s $REMOTE_POOLSET_FILE
 expect_normal_exit ./obj_pool$EXESUFFIX c $POOLSET_FILE "test" 0 0640
 expect_normal_exit ./obj_pool$EXESUFFIX o $POOLSET_FILE "test" 0 0640
 
+compare_replicas "-soOaAb -l -Z -H -C" \
+        /tmp/pool$UNITTEST_NUM.obj \
+        /tmp/pool$UNITTEST_NUM-remote.obj > diff$UNITTEST_NUM.log
+
 check
 
 pass
