@@ -1,0 +1,3 @@
+PMEMPOOLSET
+100M /tmp/pool31.obj
+REPLICA node pool31-remote.set
