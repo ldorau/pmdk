@@ -170,10 +170,12 @@ struct pmemobjpool {
 
 	/* remote replica section */
 	void *remote;	/* RPMEMpool opaque handle if it is a remote replica */
+	char *node_addr;	/* address of a remote node */
+	char *pool_desc;	/* descriptor of a poolset */
 
 	memcpy_remote_fn memcpy_persist_remote; /* remote memcpy & persist */
 
-	char unused2[1776];
+	char unused2[1758];
 };
 
 /*
