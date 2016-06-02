@@ -469,11 +469,12 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
-		if (rep->remote == NULL) {
-			void *raddr = (char *)rep + (uintptr_t)addr - \
-								(uintptr_t)pop;
+		void *raddr = (char *)rep + (uintptr_t)addr - (uintptr_t)pop;
+		if (rep->remote == NULL)
 			rep->memcpy_persist_local(raddr, addr, len);
-		}
+		else
+			rep->memcpy_persist_remote(rep, raddr, len,
+								RLANE_DEFAULT);
 		rep = rep->replica;
 	}
 }
