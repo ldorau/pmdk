@@ -1,0 +1,5 @@
+obj_pool/TEST30: START: obj_pool
+ ./obj_pool$(nW) c $(nW)pool30.set test 0 0640
+$(nW)pool30.set: file size $(N) mode $(N)
+obj_pool/TEST30: Done
+$(nW)pool30-remote.set: consistent

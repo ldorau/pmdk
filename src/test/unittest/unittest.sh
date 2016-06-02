@@ -77,7 +77,7 @@ $DIR_SRC/test/tools/fip/fip"
 NODE_PID_FILES[0]=""
 
 #
-# For non-static build testing, the variable TEST_LD_LIBRARY_PATH is
+# For all builds testing, the variable TEST_LD_LIBRARY_PATH is
 # constructed so the test pulls in the appropriate library from this
 # source tree.  To override this behavior (i.e. to force the test to
 # use the libraries installed elsewhere on the system), set
@@ -93,6 +93,15 @@ NODE_PID_FILES[0]=""
 		TEST_LD_LIBRARY_PATH=../../debug
 		;;
 	nondebug)
+		TEST_LD_LIBRARY_PATH=../../nondebug
+		;;
+#
+# we use the dynamic linking loader (dlopen + dlsym) in static builds
+#
+	static-debug)
+		TEST_LD_LIBRARY_PATH=../../debug
+		;;
+	static-nondebug)
 		TEST_LD_LIBRARY_PATH=../../nondebug
 		;;
 	esac

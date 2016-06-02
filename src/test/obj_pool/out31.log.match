@@ -1,0 +1,5 @@
+obj_pool/TEST31: START: obj_pool
+ ./obj_pool$(nW) o $(nW)pool31.set test 0 0640
+$(nW)pool31.set: pmemobj_open: Success
+obj_pool/TEST31: Done
+$(nW)pool31-remote.set: consistent
