@@ -420,6 +420,8 @@ obj_rep_memcpy_persist(PMEMobjpool *pop, void *dest, const void *src,
 	LOG(15, "pop %p dest %p src %p len %zu", pop, dest, src, len);
 
 	void *ret = pop->memcpy_persist_local(dest, src, len);
+	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+		RLANE_DEFAULT;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -427,10 +429,13 @@ obj_rep_memcpy_persist(PMEMobjpool *pop, void *dest, const void *src,
 		if (rep->remote == NULL)
 			rep->memcpy_persist_local(rdest, src, len);
 		else
-			rep->memcpy_persist_remote(rep, rdest, len,
-								RLANE_DEFAULT);
+			rep->memcpy_persist_remote(rep, rdest, len, lane);
 		rep = rep->replica;
 	}
+
+	if (pop->has_remote_replicas)
+		lane_release(pop);
+
 	return ret;
 }
 
@@ -443,6 +448,8 @@ obj_rep_memset_persist(PMEMobjpool *pop, void *dest, int c, size_t len)
 	LOG(15, "pop %p dest %p c 0x%02x len %zu", pop, dest, c, len);
 
 	void *ret = pop->memset_persist_local(dest, c, len);
+	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+		RLANE_DEFAULT;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -450,10 +457,13 @@ obj_rep_memset_persist(PMEMobjpool *pop, void *dest, int c, size_t len)
 		if (rep->remote == NULL)
 			rep->memset_persist_local(rdest, c, len);
 		else
-			rep->memcpy_persist_remote(rep, rdest, len,
-								RLANE_DEFAULT);
+			rep->memcpy_persist_remote(rep, rdest, len, lane);
 		rep = rep->replica;
 	}
+
+	if (pop->has_remote_replicas)
+		lane_release(pop);
+
 	return ret;
 }
 
@@ -466,6 +476,8 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 	LOG(15, "pop %p addr %p len %zu", pop, addr, len);
 
 	pop->persist_local(addr, len);
+	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+		RLANE_DEFAULT;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -473,10 +485,12 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 		if (rep->remote == NULL)
 			rep->memcpy_persist_local(raddr, addr, len);
 		else
-			rep->memcpy_persist_remote(rep, raddr, len,
-								RLANE_DEFAULT);
+			rep->memcpy_persist_remote(rep, raddr, len, lane);
 		rep = rep->replica;
 	}
+
+	if (pop->has_remote_replicas)
+		lane_release(pop);
 }
 
 /*
@@ -488,6 +502,8 @@ obj_rep_flush(PMEMobjpool *pop, const void *addr, size_t len)
 	LOG(15, "pop %p addr %p len %zu", pop, addr, len);
 
 	pop->flush_local(addr, len);
+	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+		RLANE_DEFAULT;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -495,12 +511,13 @@ obj_rep_flush(PMEMobjpool *pop, const void *addr, size_t len)
 		if (rep->remote == NULL) {
 			memcpy(raddr, addr, len);
 			rep->flush_local(raddr, len);
-		} else {
-			rep->memcpy_persist_remote(rep, raddr, len,
-								RLANE_DEFAULT);
-		}
+		} else
+			rep->memcpy_persist_remote(rep, raddr, len, lane);
 		rep = rep->replica;
 	}
+
+	if (pop->has_remote_replicas)
+		lane_release(pop);
 }
 
 /*
@@ -1036,6 +1053,7 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 	unsigned runtime_nlanes = OBJ_NLANES;
 
 	pop_master = set->replica[0]->part[0].addr;
+	pop_master->has_remote_replicas = 0;
 	pop_master->is_master_replica = 1;
 	pop_master->replica = NULL;
 
@@ -1067,6 +1085,7 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 			}
 		} else {
 			unsigned remote_nlanes = runtime_nlanes;
+			pop_master->has_remote_replicas = 1;
 
 			pop->remote = (*Rpmem_create)(
 						rep->remote->node_addr,
@@ -1106,6 +1125,7 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 
 	for (unsigned r = 1; r < set->nreplicas; r++) {
 		PMEMobjpool *rep = set->replica[r]->part[0].addr;
+		rep->has_remote_replicas = 0;
 		rep->is_master_replica = 0;
 	}
 
@@ -1211,6 +1231,7 @@ pmemobj_open_common(const char *path, const char *layout, int cow, int boot)
 	 * e.g. ask remote replicas hosts about theirs capabilities.
 	 */
 	unsigned runtime_nlanes = OBJ_NLANES;
+	int has_remote_replicas = 0;
 
 	PMEMobjpool *pop;
 	for (unsigned r = 0; r < set->nreplicas; r++) {
@@ -1241,6 +1262,7 @@ pmemobj_open_common(const char *path, const char *layout, int cow, int boot)
 		} else {
 			unsigned remote_nlanes = runtime_nlanes;
 			struct rpmem_pool_attr open_attr;
+			has_remote_replicas = 1;
 
 			pop->remote = (*Rpmem_open)(rep->remote->node_addr,
 						rep->remote->pool_desc,
@@ -1314,10 +1336,12 @@ pmemobj_open_common(const char *path, const char *layout, int cow, int boot)
 	}
 
 	pop = set->replica[0]->part[0].addr;
+	pop->has_remote_replicas = has_remote_replicas;
 	pop->is_master_replica = 1;
 
 	for (unsigned r = 1; r < set->nreplicas; r++) {
 		PMEMobjpool *rep = set->replica[r]->part[0].addr;
+		rep->has_remote_replicas = 0;
 		rep->is_master_replica = 0;
 	}
 
