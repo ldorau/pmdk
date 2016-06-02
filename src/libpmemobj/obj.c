@@ -709,6 +709,60 @@ pmemobj_descr_create(PMEMobjpool *pop, const char *layout, size_t poolsize)
 }
 
 /*
+ * pmemobj_remote_descr_create -- (internal) create remote obj pool descriptor
+ */
+static int
+pmemobj_remote_descr_create(PMEMobjpool *pop, const char *layout,
+				size_t poolsize)
+{
+	LOG(3, "pop %p layout %s poolsize %zu", pop, layout, poolsize);
+
+	ASSERTeq(poolsize % Pagesize, 0);
+
+	/* opaque info lives at the beginning of mapped memory pool */
+	void *dscp = (void *)((uintptr_t)(&pop->hdr) +
+			      sizeof(struct pool_hdr));
+
+	/* create the persistent part of pool's descriptor */
+	memset(dscp, 0, OBJ_DSC_P_SIZE);
+	if (layout)
+		strncpy(pop->layout, layout, PMEMOBJ_MAX_LAYOUT - 1);
+
+	/* initialize run_id, it will be incremented later */
+	pop->run_id = 0;
+	pop->memcpy_persist_remote(pop, &pop->run_id, sizeof(pop->run_id),
+							RLANE_DEFAULT);
+
+	pop->lanes_offset = OBJ_LANES_OFFSET;
+	pop->nlanes = OBJ_NLANES;
+	pop->root_offset = 0;
+
+	/* zero all lanes */
+	void *lanes_layout = (void *)((uintptr_t)pop + pop->lanes_offset);
+	pop->memcpy_persist_remote(pop, lanes_layout,
+				pop->nlanes * sizeof(struct lane_layout),
+				RLANE_DEFAULT);
+
+	pop->heap_offset = pop->lanes_offset +
+			   pop->nlanes * sizeof(struct lane_layout);
+	pop->heap_offset = (pop->heap_offset + Pagesize - 1) & ~(Pagesize - 1);
+	pop->heap_size = poolsize - pop->heap_offset;
+
+	/* initialize heap prior to storing the checksum */
+	if ((errno = heap_remote_init(pop, RLANE_DEFAULT)) != 0) {
+		ERR("!heap_init");
+		return -1;
+	}
+
+	util_checksum(dscp, OBJ_DSC_P_SIZE, &pop->checksum, 1);
+
+	/* store the persistent part of pool's descriptor (2kB) */
+	pop->memcpy_persist_remote(pop, dscp, OBJ_DSC_P_SIZE, RLANE_DEFAULT);
+
+	return 0;
+}
+
+/*
  * pmemobj_descr_check -- (internal) validate obj pool descriptor
  */
 static int
@@ -991,13 +1045,19 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 				ERR("remote replica initialization failed");
 				goto err;
 			}
+
+			/* create pool descriptor */
+			if (pmemobj_remote_descr_create(pop, layout,
+							set->poolsize) != 0) {
+				LOG(2, "descriptor creation failed");
+				goto err;
+			}
 		}
 
 		/* link replicas */
 		if (r < set->nreplicas - 1)
 			pop->replica = set->replica[r + 1]->part[0].addr;
 	}
-
 	pop = set->replica[0]->part[0].addr;
 	pop->is_master_replica = 1;
 
