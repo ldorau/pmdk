@@ -39,6 +39,7 @@
 #endif
 
 #include <errno.h>
+#include <limits.h>
 
 #include "libpmemobj.h"
 #include "cuckoo.h"
@@ -403,14 +404,11 @@ get_lane_info_record(PMEMobjpool *pop)
 }
 
 /*
- * lane_hold -- grabs a per-thread lane in a round-robin fashion
+ * lane_hold_common -- grabs a per-thread lane in a round-robin fashion
  */
-void
-lane_hold(PMEMobjpool *pop, struct lane_section **section,
-	enum lane_section_type type)
+static struct lane_info *
+lane_hold_common(PMEMobjpool *pop)
 {
-	ASSERTne(section, NULL);
-
 	struct lane_info *lane = get_lane_info_record(pop);
 	while (unlikely(lane->lane_idx == UINT64_MAX)) {
 		/* initial wrap to next CL */
@@ -424,7 +422,30 @@ lane_hold(PMEMobjpool *pop, struct lane_section **section,
 		get_lane(llocks, &lane->lane_idx,
 			pop->lanes_desc.runtime_nlanes);
 
+	return lane;
+}
+
+/*
+ * lane_hold -- hold lane and provide required lane section
+ */
+void
+lane_hold(PMEMobjpool *pop, struct lane_section **section,
+	enum lane_section_type type)
+{
+	ASSERTne(section, NULL);
+	struct lane_info *lane = lane_hold_common(pop);
 	*section = &pop->lanes_desc.lane[lane->lane_idx].sections[type];
+}
+
+/*
+ * lane_remote_hold -- hold lane and return its number
+ */
+unsigned
+lane_remote_hold(PMEMobjpool *pop)
+{
+	struct lane_info *lane = lane_hold_common(pop);
+	ASSERT(lane->lane_idx <= UINT_MAX);
+	return (unsigned)lane->lane_idx;
 }
 
 /*

@@ -115,6 +115,7 @@ int lane_check(PMEMobjpool *pop);
 
 void lane_hold(PMEMobjpool *pop, struct lane_section **section,
 	enum lane_section_type type);
+unsigned lane_remote_hold(PMEMobjpool *pop);
 void lane_release(PMEMobjpool *pop);
 
 #ifndef _MSC_VER
