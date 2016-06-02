@@ -180,7 +180,10 @@ rpmem_remove(const char *target, const char *pool_set_name)
 {
 	/* XXX */
 	printf("***************** rpmem_remove *****************\n");
-	return -1;
+	printf("target = %s\n", target);
+	printf("pool_set_name = %s\n", pool_set_name);
+	printf("***************** rpmem_remove *****************\n");
+	return 0;
 }
 
 /*
