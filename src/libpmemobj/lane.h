@@ -42,6 +42,8 @@
  */
 #define LANE_JUMP (64 / sizeof(uint64_t))
 
+#define RLANE_DEFAULT 0
+
 enum lane_section_type {
 	LANE_SECTION_ALLOCATOR,
 	LANE_SECTION_LIST,
@@ -115,8 +117,9 @@ int lane_check(PMEMobjpool *pop);
 
 void lane_hold(PMEMobjpool *pop, struct lane_section **section,
 	enum lane_section_type type);
-unsigned lane_remote_hold(PMEMobjpool *pop);
 void lane_release(PMEMobjpool *pop);
+unsigned lane_remote_hold(PMEMobjpool *pop);
+void lane_remote_release(PMEMobjpool *pop);
 
 #ifndef _MSC_VER
 

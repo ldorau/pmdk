@@ -65,7 +65,6 @@ static struct ctree *pools_tree; /* tree used for searching by address */
 int _pobj_cache_invalidate;
 
 #define REMOTE_LIBRARY "librpmem.so"
-#define RLANE_DEFAULT 0
 
 static void *Rpmem_handle;
 static RPMEMpool *(*Rpmem_create)(const char *target, const char *pool_set_name,
@@ -421,7 +420,7 @@ obj_rep_memcpy_persist(PMEMobjpool *pop, void *dest, const void *src,
 
 	void *ret = pop->memcpy_persist_local(dest, src, len);
 	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
-		RLANE_DEFAULT;
+		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -434,7 +433,7 @@ obj_rep_memcpy_persist(PMEMobjpool *pop, void *dest, const void *src,
 	}
 
 	if (pop->has_remote_replicas)
-		lane_release(pop);
+		lane_remote_release(pop);
 
 	return ret;
 }
@@ -449,7 +448,7 @@ obj_rep_memset_persist(PMEMobjpool *pop, void *dest, int c, size_t len)
 
 	void *ret = pop->memset_persist_local(dest, c, len);
 	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
-		RLANE_DEFAULT;
+		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -462,7 +461,7 @@ obj_rep_memset_persist(PMEMobjpool *pop, void *dest, int c, size_t len)
 	}
 
 	if (pop->has_remote_replicas)
-		lane_release(pop);
+		lane_remote_release(pop);
 
 	return ret;
 }
@@ -477,7 +476,7 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 
 	pop->persist_local(addr, len);
 	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
-		RLANE_DEFAULT;
+		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -490,7 +489,7 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 	}
 
 	if (pop->has_remote_replicas)
-		lane_release(pop);
+		lane_remote_release(pop);
 }
 
 /*
@@ -503,7 +502,7 @@ obj_rep_flush(PMEMobjpool *pop, const void *addr, size_t len)
 
 	pop->flush_local(addr, len);
 	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
-		RLANE_DEFAULT;
+		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
 	while (rep) {
@@ -517,7 +516,7 @@ obj_rep_flush(PMEMobjpool *pop, const void *addr, size_t len)
 	}
 
 	if (pop->has_remote_replicas)
-		lane_release(pop);
+		lane_remote_release(pop);
 }
 
 /*
@@ -1338,6 +1337,12 @@ pmemobj_open_common(const char *path, const char *layout, int cow, int boot)
 	pop = set->replica[0]->part[0].addr;
 	pop->has_remote_replicas = has_remote_replicas;
 	pop->is_master_replica = 1;
+
+	/*
+	 * before runtime initialization lanes are unavailable, remote persists
+	 * should use RLANE_DEFAULT
+	 */
+	pop->lanes_desc.runtime_nlanes = 0;
 
 	for (unsigned r = 1; r < set->nreplicas; r++) {
 		PMEMobjpool *rep = set->replica[r]->part[0].addr;

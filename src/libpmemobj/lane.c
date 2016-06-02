@@ -438,17 +438,6 @@ lane_hold(PMEMobjpool *pop, struct lane_section **section,
 }
 
 /*
- * lane_remote_hold -- hold lane and return its number
- */
-unsigned
-lane_remote_hold(PMEMobjpool *pop)
-{
-	struct lane_info *lane = lane_hold_common(pop);
-	ASSERT(lane->lane_idx <= UINT_MAX);
-	return (unsigned)lane->lane_idx;
-}
-
-/*
  * lane_release -- drops the per-thread lane
  */
 void
@@ -469,4 +458,38 @@ lane_release(PMEMobjpool *pop)
 			FATAL("__sync_bool_compare_and_swap");
 		}
 	}
+}
+
+/*
+ * lane_remote_hold -- hold lane and return its number
+ */
+unsigned
+lane_remote_hold(PMEMobjpool *pop)
+{
+	ASSERT(pop->has_remote_replicas);
+
+	/*
+	 * before runtime lane initialization all remote operations are
+	 * executed using RLANE_DEFAULT
+	 */
+	if (!pop->lanes_desc.runtime_nlanes)
+		return RLANE_DEFAULT;
+
+	struct lane_info *lane = lane_hold_common(pop);
+	ASSERT(lane->lane_idx <= UINT_MAX);
+	return (unsigned)lane->lane_idx;
+}
+
+/*
+ * lane_remote_release -- perform remote specific checks and release the lane
+ */
+void
+lane_remote_release(PMEMobjpool *pop)
+{
+	ASSERT(pop->has_remote_replicas);
+
+	if (!pop->lanes_desc.runtime_nlanes)
+			return;
+
+	lane_release(pop);
 }
