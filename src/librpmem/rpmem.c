@@ -34,15 +34,23 @@
  * rpmem.c -- main source file for librpmem
  */
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "librpmem.h"
+#include "libpmem.h"
+#include "rpmemd_db.h"
+
+static struct rpmemd_db *Rpmemddb;
 
 /*
  * struct rpmem_pool -- remote pool context
  */
 struct rpmem_pool {
-	void *pool_addr;
+	void *local_pool_addr;
+	void *remote_pool_addr;
 	size_t pool_size;
+	struct rpmemd_db_pool *db_pool;
 };
 
 /*
@@ -61,7 +69,45 @@ rpmem_create(const char *target, const char *pool_set_name,
 	const struct rpmem_pool_attr *create_attr)
 {
 	/* XXX */
-	return NULL;
+	printf("***************** rpmem_create *****************\n");
+	printf("target = %s\n", target);
+	printf("pool_set_name = %s\n", pool_set_name);
+	printf("pool_addr = %p\n", pool_addr);
+	printf("pool_size = %zu\n", pool_size);
+	printf("nlanes = %u\n", *nlanes);
+	printf("create_attr = %p\n", create_attr);
+
+	RPMEMpool *rpp = malloc(sizeof(*rpp));
+	if (rpp == NULL) {
+		printf("ERROR: out of memory\n");
+		return NULL;
+	}
+
+	if (Rpmemddb == NULL) {
+		Rpmemddb = rpmemd_db_init("/tmp/", 0644);
+		if (Rpmemddb == NULL) {
+			printf("ERROR: rpmemd_db_init()\n");
+			return NULL;
+		}
+	}
+
+	rpp->db_pool = rpmemd_db_pool_create(Rpmemddb, pool_set_name, pool_size,
+								create_attr);
+	if (rpp->db_pool == NULL) {
+		printf("ERROR: rpmemd_db_pool_create() failed\n");
+		return NULL;
+	}
+
+	rpp->pool_size = rpp->db_pool->pool_size;
+	rpp->remote_pool_addr = rpp->db_pool->pool_addr;
+	rpp->local_pool_addr = pool_addr;
+
+	printf("OUT:\n");
+	printf("rpp->local_pool_addr = %p\n", rpp->local_pool_addr);
+	printf("rpp->remote_pool_addr = %p\n", rpp->remote_pool_addr);
+	printf("***************** rpmem_create OK *****************\n");
+
+	return rpp;
 }
 
 /*
@@ -80,7 +126,45 @@ rpmem_open(const char *target, const char *pool_set_name,
 	struct rpmem_pool_attr *open_attr)
 {
 	/* XXX */
-	return NULL;
+	printf("***************** rpmem_open *****************\n");
+	printf("target = %s\n", target);
+	printf("pool_set_name = %s\n", pool_set_name);
+	printf("pool_addr = %p\n", pool_addr);
+	printf("pool_size = %zu\n", pool_size);
+	printf("nlanes = %u\n", *nlanes);
+	printf("open_attr = %p\n", open_attr);
+
+	RPMEMpool *rpp = malloc(sizeof(*rpp));
+	if (rpp == NULL) {
+		printf("ERROR: out of memory\n");
+		return NULL;
+	}
+
+	if (Rpmemddb == NULL) {
+		Rpmemddb = rpmemd_db_init("/tmp/", 0644);
+		if (Rpmemddb == NULL) {
+			printf("ERROR: rpmemd_db_init()\n");
+			return NULL;
+		}
+	}
+
+	rpp->db_pool = rpmemd_db_pool_open(Rpmemddb, pool_set_name, pool_size,
+								open_attr);
+	if (rpp->db_pool == NULL) {
+		printf("ERROR: rpmemd_db_pool_open() failed\n");
+		return NULL;
+	}
+
+	rpp->pool_size = rpp->db_pool->pool_size;
+	rpp->remote_pool_addr = rpp->db_pool->pool_addr;
+	rpp->local_pool_addr = pool_addr;
+
+	printf("OUT:\n");
+	printf("rpp->local_pool_addr = %p\n", rpp->local_pool_addr);
+	printf("rpp->remote_pool_addr = %p\n", rpp->remote_pool_addr);
+	printf("***************** rpmem_open OK *****************\n");
+
+	return rpp;
 }
 
 /*
@@ -93,7 +177,11 @@ int
 rpmem_remove(const char *target, const char *pool_set_name)
 {
 	/* XXX */
-	return -1;
+	printf("***************** rpmem_remove *****************\n");
+	printf("target = %s\n", target);
+	printf("pool_set_name = %s\n", pool_set_name);
+	printf("***************** rpmem_remove *****************\n");
+	return 0;
 }
 
 /*
@@ -103,7 +191,11 @@ int
 rpmem_close(RPMEMpool *rpp)
 {
 	/* XXX */
-	return -1;
+	printf("***************** rpmem_close *****************\n");
+	rpmemd_db_pool_close(Rpmemddb, rpp->db_pool);
+	rpmemd_db_fini(Rpmemddb);
+	free(rpp);
+	return 0;
 }
 
 /*
@@ -118,7 +210,18 @@ int
 rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length, unsigned lane)
 {
 	/* XXX */
-	return -1;
+
+	uintptr_t dst = (uintptr_t)rpp->remote_pool_addr + (uintptr_t)offset;
+	uintptr_t src = (uintptr_t)rpp->local_pool_addr + (uintptr_t)offset;
+
+	printf(">>> rpmem_persist - memcpy(%p -> %p (%zu))\n",
+		(void *)src, (void *)dst, length);
+	memcpy((void *)dst, (void *)src, length);
+
+	printf(">>> rpmem_persist - pmem_msync()\n");
+	pmem_msync((void *)dst, length);
+
+	return 0;
 }
 
 /*
@@ -133,5 +236,6 @@ int
 rpmem_read(RPMEMpool *rpp, void *buff, size_t offset, size_t length)
 {
 	/* XXX */
+	printf("***************** rpmem_read *****************\n");
 	return -1;
 }
