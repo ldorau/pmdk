@@ -115,6 +115,9 @@ typedef void *(*memcpy_fn)(PMEMobjpool *pop, void *dest, const void *src,
 					size_t len);
 typedef void *(*memset_fn)(PMEMobjpool *pop, void *dest, int c, size_t len);
 
+typedef void (*memcpy_remote_fn)(PMEMobjpool *pop, const void *, size_t,
+					unsigned);
+
 extern unsigned long long Pagesize;
 
 typedef uint64_t type_num_t;
@@ -164,7 +167,15 @@ struct pmemobjpool {
 
 	PMEMmutex rootlock;	/* root object lock */
 	int is_master_replica;
-	char unused2[1796];
+
+	/* remote replica section */
+	void *remote;	/* RPMEMpool opaque handle if it is a remote replica */
+	char *node_addr;	/* address of a remote node */
+	char *pool_desc;	/* descriptor of a poolset */
+
+	memcpy_remote_fn memcpy_persist_remote; /* remote memcpy & persist */
+
+	char unused2[1758];
 };
 
 /*

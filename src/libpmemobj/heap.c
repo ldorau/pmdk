@@ -1714,6 +1714,34 @@ heap_init(PMEMobjpool *pop)
 }
 
 /*
+ * heap_remote_init -- initializes the heap of remote replica
+ *
+ * If successful function returns zero. Otherwise an error number is returned.
+ */
+int
+heap_remote_init(PMEMobjpool *pop, unsigned lane)
+{
+	if (pop->heap_size < HEAP_MIN_SIZE)
+		return EINVAL;
+
+	struct heap_layout *layout = heap_get_layout(pop);
+	pop->memcpy_persist_remote(pop, &layout->header,
+				sizeof(struct heap_header), lane);
+
+	unsigned zones = heap_max_zone(pop->heap_size);
+	for (unsigned i = 0; i < zones; ++i) {
+		pop->memcpy_persist_remote(pop,
+				&ZID_TO_ZONE(layout, i)->header,
+				sizeof(struct zone_header), lane);
+		pop->memcpy_persist_remote(pop,
+				&ZID_TO_ZONE(layout, i)->chunk_headers,
+				sizeof(struct zone_header), lane);
+	}
+
+	return 0;
+}
+
+/*
  * heap_boot -- cleanups the volatile heap state
  *
  * If successful function returns zero. Otherwise an error number is returned.
