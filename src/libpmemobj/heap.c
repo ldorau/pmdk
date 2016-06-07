@@ -1714,7 +1714,8 @@ heap_init(PMEMobjpool *pop)
 }
 
 /*
- * heap_remote_init -- initializes the heap of remote replica
+ * heap_remote_init -- initializes the heap of remote replica, in order that
+ *                     it is consistent with the local one.
  *
  * If successful function returns zero. Otherwise an error number is returned.
  */

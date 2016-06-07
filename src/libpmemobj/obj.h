@@ -115,8 +115,8 @@ typedef void *(*memcpy_fn)(PMEMobjpool *pop, void *dest, const void *src,
 					size_t len);
 typedef void *(*memset_fn)(PMEMobjpool *pop, void *dest, int c, size_t len);
 
-typedef void (*memcpy_remote_fn)(PMEMobjpool *pop, const void *, size_t,
-					unsigned);
+typedef void *(*memcpy_remote_fn)(PMEMobjpool *pop, const void *addr,
+					size_t len, unsigned lane);
 
 extern unsigned long long Pagesize;
 
