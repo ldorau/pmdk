@@ -1927,11 +1927,11 @@ util_unmap_all_hdrs(struct pool_set *set)
 }
 
 /*
- * util_check_remote -- check headers, check UUID's, check replicas linkage
+ * util_check_header -- check headers, check UUID's, check replicas linkage
  *                      if the pool set contains a remote replica
  */
 static int
-util_check_remote(struct pool_set *set, const char *sig, uint32_t major,
+util_check_header(struct pool_set *set, const char *sig, uint32_t major,
 			uint32_t compat, uint32_t incompat, uint32_t ro_compat)
 {
 	LOG(3, "set %p sig %.8s major %u compat %#x incompat %#x ro_comapt %#x",
@@ -2070,9 +2070,13 @@ util_pool_open(struct pool_set **setp, const char *path, int rdonly,
 		}
 	}
 
-	/* remaining checks will be done in the upper layer */
-	if (set->remote)
+	if (set->remote) {
+		/*
+		 * Remaining checks will be done by the upper layer
+		 * using util_check_header()
+		 */
 		return 0;
+	}
 
 	/* check headers, check UUID's, check replicas linkage */
 	for (unsigned r = 0; r < set->nreplicas; r++) {
@@ -2116,11 +2120,11 @@ err:
 }
 
 /*
- * util_remote_replica_check -- validate header, UUID's and replicas linkage
- *                              of remote replicas in the set
+ * util_check_replicas -- validate header, UUID's and replicas linkage
+ *                        of all replicas in the set
  */
 int
-util_remote_replica_check(struct pool_set *set, const char *sig, uint32_t major,
+util_check_replicas(struct pool_set *set, const char *sig, uint32_t major,
 			uint32_t compat, uint32_t incompat, uint32_t ro_compat)
 {
 	LOG(3, "set %p sig %.8s major %u compat %#x incompat %#x ro_comapt %#x",
@@ -2128,7 +2132,7 @@ util_remote_replica_check(struct pool_set *set, const char *sig, uint32_t major,
 
 	int ret;
 
-	ret = util_check_remote(set, sig, major, compat, incompat, ro_compat);
+	ret = util_check_header(set, sig, major, compat, incompat, ro_compat);
 	util_unmap_all_hdrs(set);
 
 	return ret;

@@ -39,7 +39,6 @@ typedef int (*pmalloc_constr)(PMEMobjpool *pop, void *ptr,
 
 int heap_boot(PMEMobjpool *pop);
 int heap_init(PMEMobjpool *pop);
-int heap_remote_init(PMEMobjpool *pop, unsigned lane);
 void heap_vg_open(PMEMobjpool *pop);
 void heap_cleanup(PMEMobjpool *pop);
 int heap_check(PMEMobjpool *pop);

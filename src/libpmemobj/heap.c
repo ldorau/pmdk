@@ -1674,6 +1674,9 @@ heap_vg_open(PMEMobjpool *pop)
 }
 #endif
 
+#define FOR_ALL_REPLICAS(pop, rep) \
+	for (PMEMobjpool *rep = pop; rep; rep = rep->replica)
+
 /*
  * heap_init -- initializes the heap
  *
@@ -1685,58 +1688,29 @@ heap_init(PMEMobjpool *pop)
 	if (pop->heap_size < HEAP_MIN_SIZE)
 		return EINVAL;
 
-	VALGRIND_DO_MAKE_MEM_UNDEFINED(pop, (char *)pop + pop->heap_offset,
-			pop->heap_size);
+	FOR_ALL_REPLICAS(pop, rep) {
+		VALGRIND_DO_MAKE_MEM_UNDEFINED(rep,
+					(char *)rep + rep->heap_offset,
+					rep->heap_size);
+	}
 
 	struct heap_layout *layout = heap_get_layout(pop);
 	heap_write_header(&layout->header, pop->heap_size);
-	pmem_msync(&layout->header, sizeof(struct heap_header));
+	pop->persist(pop, &layout->header, sizeof(struct heap_header));
 
 	unsigned zones = heap_max_zone(pop->heap_size);
 	for (unsigned i = 0; i < zones; ++i) {
-		memset(&ZID_TO_ZONE(layout, i)->header, 0,
-				sizeof(struct zone_header));
-		memset(&ZID_TO_ZONE(layout, i)->chunk_headers, 0,
-				sizeof(struct chunk_header));
-
-		pmem_msync(&ZID_TO_ZONE(layout, i)->header,
-				sizeof(struct zone_header));
-		pmem_msync(&ZID_TO_ZONE(layout, i)->chunk_headers,
-				sizeof(struct zone_header));
+		pop->memset_persist(pop, &ZID_TO_ZONE(layout, i)->header,
+				0, sizeof(struct zone_header));
+		pop->memset_persist(pop, &ZID_TO_ZONE(layout, i)->chunk_headers,
+				0, sizeof(struct chunk_header));
 
 		/* only explicitly allocated chunks should be accessible */
-		VALGRIND_DO_MAKE_MEM_NOACCESS(pop,
-			&ZID_TO_ZONE(layout, i)->chunk_headers,
-			sizeof(struct chunk_header));
-	}
-
-	return 0;
-}
-
-/*
- * heap_remote_init -- initializes the heap of remote replica, in order that
- *                     it is consistent with the local one.
- *
- * If successful function returns zero. Otherwise an error number is returned.
- */
-int
-heap_remote_init(PMEMobjpool *pop, unsigned lane)
-{
-	if (pop->heap_size < HEAP_MIN_SIZE)
-		return EINVAL;
-
-	struct heap_layout *layout = heap_get_layout(pop);
-	pop->memcpy_persist_remote(pop, &layout->header,
-				sizeof(struct heap_header), lane);
-
-	unsigned zones = heap_max_zone(pop->heap_size);
-	for (unsigned i = 0; i < zones; ++i) {
-		pop->memcpy_persist_remote(pop,
-				&ZID_TO_ZONE(layout, i)->header,
-				sizeof(struct zone_header), lane);
-		pop->memcpy_persist_remote(pop,
+		FOR_ALL_REPLICAS(pop, rep) {
+			VALGRIND_DO_MAKE_MEM_NOACCESS(rep,
 				&ZID_TO_ZONE(layout, i)->chunk_headers,
-				sizeof(struct zone_header), lane);
+				sizeof(struct chunk_header));
+		}
 	}
 
 	return 0;
