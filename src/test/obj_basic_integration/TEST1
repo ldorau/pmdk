@@ -37,6 +37,13 @@ export UNITTEST_NUM=1
 # standard unit test setup
 . ../unittest/unittest.sh
 
+#
+# XXX
+# Because of a bug in pmemcheck, this test takes too much time now.
+# Remove it, when the bug is fixed.
+#
+require_test_type long
+
 configure_valgrind pmemcheck force-enable
 setup
 
