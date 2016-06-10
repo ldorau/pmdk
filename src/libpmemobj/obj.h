@@ -176,7 +176,7 @@ struct pmemobjpool {
 
 	memcpy_remote_fn memcpy_persist_remote; /* remote memcpy & persist */
 
-	char unused2[1758];
+	char unused2[1762];
 };
 
 /*

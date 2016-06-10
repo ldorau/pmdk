@@ -80,7 +80,7 @@ struct lane_descriptor {
 	 * available in the pool. Number of lanes can be limited by shortage of
 	 * other resources e.g. available RNIC's queues.
 	 */
-	uint64_t runtime_nlanes;
+	unsigned runtime_nlanes;
 	unsigned next_lane_idx;
 	uint64_t *lane_locks;
 	struct lane *lane;

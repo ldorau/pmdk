@@ -1087,7 +1087,7 @@ pmemobj_runtime_init(PMEMobjpool *pop, int rdonly, int boot, uint64_t nlanes)
 
 	pop->uuid_lo = pmemobj_get_uuid_lo(pop);
 
-	pop->lanes_desc.runtime_nlanes = nlanes;
+	pop->lanes_desc.runtime_nlanes = (unsigned)nlanes;
 
 	if (boot) {
 		if ((errno = pmemobj_boot(pop)) != 0)
