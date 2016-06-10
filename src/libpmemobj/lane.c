@@ -404,11 +404,21 @@ get_lane_info_record(PMEMobjpool *pop)
 }
 
 /*
- * lane_hold_common -- grabs a per-thread lane in a round-robin fashion
+ * lane_hold -- grabs a per-thread lane in a round-robin fashion
  */
-static struct lane_info *
-lane_hold_common(PMEMobjpool *pop)
+unsigned
+lane_hold(PMEMobjpool *pop, struct lane_section **section,
+	enum lane_section_type type)
 {
+	/*
+	 * Before runtime lane initialization all remote operations are
+	 * executed using RLANE_DEFAULT.
+	 */
+	if (unlikely(!pop->lanes_desc.runtime_nlanes)) {
+		ASSERT(pop->has_remote_replicas);
+		return RLANE_DEFAULT;
+	}
+
 	struct lane_info *lane = get_lane_info_record(pop);
 	while (unlikely(lane->lane_idx == UINT64_MAX)) {
 		/* initial wrap to next CL */
@@ -422,19 +432,12 @@ lane_hold_common(PMEMobjpool *pop)
 		get_lane(llocks, &lane->lane_idx,
 			pop->lanes_desc.runtime_nlanes);
 
-	return lane;
-}
+	if (likely(section)) {
+		ASSERT(type < MAX_LANE_SECTION);
+		*section = &pop->lanes_desc.lane[lane->lane_idx].sections[type];
+	}
 
-/*
- * lane_hold -- hold lane and provide required lane section
- */
-void
-lane_hold(PMEMobjpool *pop, struct lane_section **section,
-	enum lane_section_type type)
-{
-	ASSERTne(section, NULL);
-	struct lane_info *lane = lane_hold_common(pop);
-	*section = &pop->lanes_desc.lane[lane->lane_idx].sections[type];
+	return (unsigned)lane->lane_idx;
 }
 
 /*
@@ -443,6 +446,11 @@ lane_hold(PMEMobjpool *pop, struct lane_section **section,
 void
 lane_release(PMEMobjpool *pop)
 {
+	if (unlikely(!pop->lanes_desc.runtime_nlanes)) {
+		ASSERT(pop->has_remote_replicas);
+		return;
+	}
+
 	struct lane_info *lane = get_lane_info_record(pop);
 
 	ASSERTne(lane, NULL);
@@ -458,38 +466,4 @@ lane_release(PMEMobjpool *pop)
 			FATAL("__sync_bool_compare_and_swap");
 		}
 	}
-}
-
-/*
- * lane_remote_hold -- hold lane and return its number
- */
-unsigned
-lane_remote_hold(PMEMobjpool *pop)
-{
-	ASSERT(pop->has_remote_replicas);
-
-	/*
-	 * before runtime lane initialization all remote operations are
-	 * executed using RLANE_DEFAULT
-	 */
-	if (!pop->lanes_desc.runtime_nlanes)
-		return RLANE_DEFAULT;
-
-	struct lane_info *lane = lane_hold_common(pop);
-	ASSERT(lane->lane_idx <= UINT_MAX);
-	return (unsigned)lane->lane_idx;
-}
-
-/*
- * lane_remote_release -- perform remote specific checks and release the lane
- */
-void
-lane_remote_release(PMEMobjpool *pop)
-{
-	ASSERT(pop->has_remote_replicas);
-
-	if (!pop->lanes_desc.runtime_nlanes)
-			return;
-
-	lane_release(pop);
 }

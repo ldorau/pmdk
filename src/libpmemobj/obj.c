@@ -462,7 +462,8 @@ obj_rep_memcpy_persist(PMEMobjpool *pop, void *dest, const void *src,
 	LOG(15, "pop %p dest %p src %p len %zu", pop, dest, src, len);
 
 	void *ret = pop->memcpy_persist_local(dest, src, len);
-	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+	unsigned lane = pop->has_remote_replicas ?
+		lane_hold(pop, NULL, LANE_WITHOUT_SECTION) :
 		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
@@ -479,7 +480,7 @@ obj_rep_memcpy_persist(PMEMobjpool *pop, void *dest, const void *src,
 	}
 
 	if (pop->has_remote_replicas)
-		lane_remote_release(pop);
+		lane_release(pop);
 
 	return ret;
 }
@@ -493,7 +494,8 @@ obj_rep_memset_persist(PMEMobjpool *pop, void *dest, int c, size_t len)
 	LOG(15, "pop %p dest %p c 0x%02x len %zu", pop, dest, c, len);
 
 	void *ret = pop->memset_persist_local(dest, c, len);
-	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+	unsigned lane = pop->has_remote_replicas ?
+		lane_hold(pop, NULL, LANE_WITHOUT_SECTION) :
 		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
@@ -510,7 +512,7 @@ obj_rep_memset_persist(PMEMobjpool *pop, void *dest, int c, size_t len)
 	}
 
 	if (pop->has_remote_replicas)
-		lane_remote_release(pop);
+		lane_release(pop);
 
 	return ret;
 }
@@ -524,7 +526,8 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 	LOG(15, "pop %p addr %p len %zu", pop, addr, len);
 
 	pop->persist_local(addr, len);
-	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+	unsigned lane = pop->has_remote_replicas ?
+		lane_hold(pop, NULL, LANE_WITHOUT_SECTION) :
 		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
@@ -541,7 +544,7 @@ obj_rep_persist(PMEMobjpool *pop, const void *addr, size_t len)
 	}
 
 	if (pop->has_remote_replicas)
-		lane_remote_release(pop);
+		lane_release(pop);
 }
 
 /*
@@ -553,7 +556,8 @@ obj_rep_flush(PMEMobjpool *pop, const void *addr, size_t len)
 	LOG(15, "pop %p addr %p len %zu", pop, addr, len);
 
 	pop->flush_local(addr, len);
-	unsigned lane = pop->has_remote_replicas ? lane_remote_hold(pop) :
+	unsigned lane = pop->has_remote_replicas ?
+		lane_hold(pop, NULL, LANE_WITHOUT_SECTION) :
 		UINT_MAX;
 
 	PMEMobjpool *rep = pop->replica;
@@ -571,7 +575,7 @@ obj_rep_flush(PMEMobjpool *pop, const void *addr, size_t len)
 	}
 
 	if (pop->has_remote_replicas)
-		lane_remote_release(pop);
+		lane_release(pop);
 }
 
 /*

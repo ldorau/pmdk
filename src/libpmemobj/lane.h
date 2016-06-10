@@ -49,7 +49,9 @@ enum lane_section_type {
 	LANE_SECTION_LIST,
 	LANE_SECTION_TRANSACTION,
 
-	MAX_LANE_SECTION
+	MAX_LANE_SECTION,
+
+	LANE_WITHOUT_SECTION = MAX_LANE_SECTION
 };
 
 struct lane_section_layout {
@@ -115,11 +117,9 @@ void lane_cleanup(PMEMobjpool *pop);
 int lane_recover_and_section_boot(PMEMobjpool *pop);
 int lane_check(PMEMobjpool *pop);
 
-void lane_hold(PMEMobjpool *pop, struct lane_section **section,
+unsigned lane_hold(PMEMobjpool *pop, struct lane_section **section,
 	enum lane_section_type type);
 void lane_release(PMEMobjpool *pop);
-unsigned lane_remote_hold(PMEMobjpool *pop);
-void lane_remote_release(PMEMobjpool *pop);
 
 #ifndef _MSC_VER
 
