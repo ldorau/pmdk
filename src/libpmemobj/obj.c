@@ -647,8 +647,7 @@ pmemobj_boot(PMEMobjpool *pop)
  * pmemobj_descr_create -- (internal) create obj pool descriptor
  */
 static int
-pmemobj_descr_create(PMEMobjpool *pop, const char *layout, size_t poolsize,
-			unsigned runtime_nlanes)
+pmemobj_descr_create(PMEMobjpool *pop, const char *layout, size_t poolsize)
 {
 	LOG(3, "pop %p layout %s poolsize %zu", pop, layout, poolsize);
 
@@ -668,7 +667,7 @@ pmemobj_descr_create(PMEMobjpool *pop, const char *layout, size_t poolsize,
 	pop->persist(pop, &pop->run_id, sizeof(pop->run_id));
 
 	pop->lanes_offset = OBJ_LANES_OFFSET;
-	pop->nlanes = runtime_nlanes;
+	pop->nlanes = OBJ_NLANES;
 	pop->root_offset = 0;
 
 	/* zero all lanes */
@@ -1040,8 +1039,7 @@ pmemobj_create(const char *path, const char *layout, size_t poolsize,
 	}
 
 	/* create pool descriptor */
-	if (pmemobj_descr_create(pop, layout, set->poolsize,
-							runtime_nlanes) != 0) {
+	if (pmemobj_descr_create(pop, layout, set->poolsize) != 0) {
 		LOG(2, "creation of pool descriptor failed");
 		goto err;
 	}
