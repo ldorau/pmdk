@@ -38,6 +38,8 @@ export LC_ALL="C"
 
 . ../testconfig.sh
 
+rm -f echo${UNITTEST_NUM}.log
+
 function verbose_msg() {
 	if [ "$UNITTEST_LOG_LEVEL" -ge 2 ]; then
 		echo "$*"
@@ -746,6 +748,9 @@ function validate_valgrind_log() {
 # if VALGRIND_DISABLED is not empty valgrind tool will be omitted
 #
 function expect_normal_exit() {
+
+	echo "expect_normal_exit: $*" >> echo${UNITTEST_NUM}.log
+
 	local VALGRIND_LOG_FILE=${CHECK_TYPE}${UNITTEST_NUM}.log
 	local N=$2
 
@@ -908,6 +913,9 @@ function expect_normal_exit() {
 # expect_abnormal_exit -- run a given command, expect it to exit non-zero
 #
 function expect_abnormal_exit() {
+
+	echo "expect_abnormal_exit: $*" >> echo${UNITTEST_NUM}.log
+
 	if [ -n "$TRACE" ]; then
 		case "$1"
 		in
