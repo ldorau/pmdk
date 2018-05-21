@@ -68,6 +68,8 @@ INCS += -I$(TOP)/src/libpmemobj
 INCS += -I$(TOP)/src/libpmemcto
 
 CFLAGS += -DUSE_RPMEM
+CFLAGS += -DDEBUG
+CFLAGS += -ggdb3
 
 MANPAGES = $(TOP)/doc/pmempool.1\
            $(TOP)/doc/pmempool-info.1\
