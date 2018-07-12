@@ -323,7 +323,9 @@ function expect_bad_blocks {
 		cat $PREP_LOG_FILE
 		msg "====================================================================="
 		msg ""
-		fatal "Error: ndctl failed to inject or retain bad blocks"
+		msg "SKIP: Error: ndctl failed to inject or retain bad blocks"
+		sudo umount /dev/pmem* && true
+		exit 0
 	fi
 }
 
@@ -333,5 +335,10 @@ function expect_bad_blocks {
 #
 function expect_bad_blocks_node {
 	# XXX sudo should be removed when it is not needed
-	expect_normal_exit run_on_node $1 sudo ndctl list -M | grep -e "badblock_count" -e "offset" -e "length" >> $LOG || fatal "Error: ndctl failed to inject or retain bad blocks"
+	expect_normal_exit run_on_node $1 "sudo ndctl list -M" | grep -e "badblock_count" -e "offset" -e "length" >> $LOG && true
+	if [ $? -ne 0 ]; then
+		msg "Error: ndctl failed to inject or retain bad blocks"
+		sudo umount /dev/pmem* && true
+		exit 0
+	fi
 }
