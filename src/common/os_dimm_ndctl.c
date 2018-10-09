@@ -112,10 +112,11 @@ os_dimm_match_device(const os_stat_t *st, const char *devname)
 static int
 os_dimm_region_namespace(struct ndctl_ctx *ctx, const os_stat_t *st,
 				struct ndctl_region **pregion,
-				struct ndctl_namespace **pndns)
+				struct ndctl_namespace **pndns,
+				int *is_dax_or_btt)
 {
-	LOG(3, "ctx %p stat %p pregion %p pnamespace %p",
-		ctx, st, pregion, pndns);
+	LOG(3, "ctx %p stat %p pregion %p pnamespace %p is_dax_or_btt %p",
+		ctx, st, pregion, pndns, is_dax_or_btt);
 
 	struct ndctl_bus *bus;
 	struct ndctl_region *region;
@@ -135,6 +136,8 @@ os_dimm_region_namespace(struct ndctl_ctx *ctx, const os_stat_t *st,
 
 		if ((dax = ndctl_namespace_get_dax(ndns))) {
 			struct daxctl_region *dax_region;
+			if (is_dax_or_btt)
+				*is_dax_or_btt = 1;
 			dax_region = ndctl_dax_get_daxctl_region(dax);
 			if (!dax_region) {
 				ERR("!cannot find dax region");
@@ -158,10 +161,16 @@ os_dimm_region_namespace(struct ndctl_ctx *ctx, const os_stat_t *st,
 
 		} else {
 			if ((btt = ndctl_namespace_get_btt(ndns))) {
+				if (is_dax_or_btt)
+					*is_dax_or_btt = 1;
 				devname = ndctl_btt_get_block_device(btt);
 			} else if ((pfn = ndctl_namespace_get_pfn(ndns))) {
+				if (is_dax_or_btt)
+					*is_dax_or_btt = 0;
 				devname = ndctl_pfn_get_block_device(pfn);
 			} else {
+				if (is_dax_or_btt)
+					*is_dax_or_btt = 0;
 				devname =
 					ndctl_namespace_get_block_device(ndns);
 			}
@@ -196,7 +205,7 @@ os_dimm_interleave_set(struct ndctl_ctx *ctx, const os_stat_t *st)
 
 	struct ndctl_region *region = NULL;
 
-	if (os_dimm_region_namespace(ctx, st, &region, NULL))
+	if (os_dimm_region_namespace(ctx, st, &region, NULL, NULL))
 		return NULL;
 
 	return region ? ndctl_region_get_interleave_set(region) : NULL;
@@ -393,16 +402,72 @@ os_dimm_get_namespace_bounds(struct ndctl_region *region,
 	return 0;
 }
 
+#define ndctl_namespace_badblock_foreach(ndns, badblock) \
+	for (badblock = ndctl_namespace_get_first_badblock(ndns); \
+		badblock != NULL; \
+		badblock = ndctl_namespace_get_next_badblock(ndns))
+
 /*
- * os_dimm_namespace_get_badblocks -- (internal) returns bad blocks
- *                                    in the given namespace
+ * os_dimm_get_badblocks_ndns_pfn -- (internal) returns bad blocks
+ *                                   in the given namespace
+ *                                   in case of namespace or pfn device
  */
 static int
-os_dimm_namespace_get_badblocks(struct ndctl_region *region,
+os_dimm_get_badblocks_ndns_pfn(struct ndctl_namespace *ndns,
+				struct badblocks *bbs)
+{
+	LOG(3, "namespace %p badblocks %p", ndns, bbs);
+
+	ASSERTne(bbs, NULL);
+
+	VEC(bbsvec, struct bad_block) bbv = VEC_INITIALIZER;
+
+	bbs->ns_resource = 0;
+	bbs->bb_cnt = 0;
+	bbs->bbv = NULL;
+
+	struct badblock *bb;
+	struct bad_block bbn;
+	ndctl_namespace_badblock_foreach(ndns, bb) {
+		/*
+		 * Form a bad block structure with offset and length
+		 * expressed in bytes and offset relative to the beginning
+		 * of the namespace.
+		 */
+		bbn.offset = SEC2B(bb->offset);
+		bbn.length = SEC2B(bb->len);
+		bbn.nhealthy = NO_HEALTHY_REPLICA; /* unknown healthy replica */
+
+		/* add the new bad block to the vector */
+		if (VEC_PUSH_BACK(&bbv, bbn)) {
+			VEC_DELETE(&bbv);
+			return -1;
+		}
+
+		LOG(4,
+			"namespace bad block: begin %llu end %llu length %u (in 512B sectors)",
+			bb->offset, bb->offset + bb->len - 1, bb->len);
+	}
+
+	bbs->bb_cnt = (unsigned)VEC_SIZE(&bbv);
+	bbs->bbv = VEC_ARR(&bbv);
+
+	LOG(4, "number of bad blocks detected: %u", bbs->bb_cnt);
+
+	return 0;
+}
+
+/*
+ * os_dimm_get_badblocks_dax_btt -- (internal) returns bad blocks
+ *                                  in the given namespace
+ *                                  in case of dax or btt device
+ */
+static int
+os_dimm_get_badblocks_dax_btt(struct ndctl_region *region,
 				struct ndctl_namespace *ndns,
 				struct badblocks *bbs)
 {
-	LOG(3, "region %p, namespace %p", region, ndns);
+	LOG(3, "region %p namespace %p badblocks %p", region, ndns, bbs);
 
 	ASSERTne(bbs, NULL);
 
@@ -500,7 +565,7 @@ os_dimm_files_namespace_bus(struct ndctl_ctx *ctx,
 		return -1;
 	}
 
-	int rv = os_dimm_region_namespace(ctx, &st, &region, &ndns);
+	int rv = os_dimm_region_namespace(ctx, &st, &region, &ndns, NULL);
 	if (rv) {
 		LOG(1, "getting region and namespace failed");
 		return -1;
@@ -534,13 +599,15 @@ os_dimm_files_namespace_badblocks_bus(struct ndctl_ctx *ctx,
 	struct ndctl_namespace *ndns;
 
 	os_stat_t st;
+	int is_dax_or_btt;
 
 	if (os_stat(path, &st)) {
 		ERR("!stat %s", path);
 		return -1;
 	}
 
-	int rv = os_dimm_region_namespace(ctx, &st, &region, &ndns);
+	int rv = os_dimm_region_namespace(ctx, &st, &region, &ndns,
+						&is_dax_or_btt);
 	if (rv) {
 		LOG(1, "getting region and namespace failed");
 		return -1;
@@ -554,7 +621,10 @@ os_dimm_files_namespace_badblocks_bus(struct ndctl_ctx *ctx,
 	if (pbus)
 		*pbus = ndctl_region_get_bus(region);
 
-	return os_dimm_namespace_get_badblocks(region, ndns, bbs);
+	if (is_dax_or_btt)
+		return os_dimm_get_badblocks_dax_btt(region, ndns, bbs);
+	else
+		return os_dimm_get_badblocks_ndns_pfn(ndns, bbs);
 }
 
 /*
