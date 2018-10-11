@@ -46,6 +46,9 @@
 #define FILL_SIZE 245 /* so that size of one record is 1024 bytes */
 #define SKIP_OFFSET offsetof(struct data_s, checksum)
 
+#define POOL_MIN_SIZE	8388608
+#define PART_MIN_SIZE	2097152
+
 static const char *Signature = "OBJ_VERIFY";
 
 POBJ_LAYOUT_BEGIN(obj_verify);
@@ -69,8 +72,12 @@ struct root_s {
  * record_constructor -- constructor of a list element
  */
 static int
-record_constructor(PMEMobjpool *pop, void *ptr, void *arg)
+record_constructor()
 {
+	PMEMobjpool *pop = NULL;
+	void *ptr = NULL;
+	void *arg = NULL;
+
 	struct data_s *rec = (struct data_s *)ptr;
 	uint64_t *count = arg;
 
@@ -97,52 +104,59 @@ record_constructor(PMEMobjpool *pop, void *ptr, void *arg)
  * do_create -- (internal) create a pool to be verified
  */
 static void
-do_create(const char *path, const char *layout)
+do_create(const char *path)
 {
-	struct pobj_alloc_class_desc class;
-	PMEMobjpool *pop;
-	PMEMoid oid;
-	uint64_t count;
+	struct pool_set *set;
+	struct pool_attr attr;
+	uint64_t count = 0;
 
 	srand((unsigned int)time(NULL));
 
-	if ((pop = pmemobj_create(path, layout, 0,
-						S_IWUSR | S_IRUSR)) == NULL) {
+	memset(&attr, 0, sizeof(attr));
+
+	if (util_pool_create(&set, path, 0, POOL_MIN_SIZE, PART_MIN_SIZE,
+						&attr, NULL, 1)) {
 		if (errno != EEXIST) {
-			out("!%s: pmemobj_create: %s",
-				path, pmemobj_errormsg());
+			out("!%s: util_pool_create: %s",
+				path, out_get_errormsg());
 			exit(-1);
 		}
 
-		if ((pop = pmemobj_open(path, layout)) == NULL) {
-			out("!%s: pmemobj_open: %s",
-				path, pmemobj_errormsg());
+		if (util_pool_open(&set, path, PART_MIN_SIZE,
+					NULL, 0, NULL, 0)) {
+			out("!%s: util_pool_open: %s",
+				path, out_get_errormsg());
 			exit(-1);
 		}
 	}
 
-	TOID(struct root_s) root = POBJ_ROOT(pop, struct root_s);
-
-	class.header_type = POBJ_HEADER_NONE;
-	class.unit_size = sizeof(struct data_s);
-	class.alignment = 0;
-	class.units_per_block = 1000;
-
-	if (pmemobj_ctl_set(pop, "heap.alloc_class.new.desc", &class) != 0) {
-		pmemobj_close(pop);
-		out("!pmemobj_ctl_set: %s", path);
-		exit(-1);
-	}
+	ASSERT(set->nreplicas > 0);
 
 	out("create(%s): allocating records in the pool ...", path);
 
-	count = D_RO(root)->count;
-	while (pmemobj_xalloc(pop, &oid, class.unit_size, 0,
-				POBJ_CLASS_ID(class.class_id),
-				record_constructor, &D_RW(root)->count) == 0)
-		;
+	out("* 1");
+	size_t size = set->poolsize;
+	out("* 2");
+	void *addr = set->replica[0]->part[0].addr;
+	out("* 3");
+	ASSERT(set->poolsize <= set->replica[0]->repsize);
 
-	count = D_RO(root)->count - count;
+	out("* 4");
+	size_t rec_size = sizeof(struct data_s);
+	out("* 5");
+	ASSERTeq(size, 1024);
+
+	(void) size;
+	(void) addr;
+	(void) rec_size;
+
+	out("* 6");
+
+	while (0) {
+		/* record_constructor(); */
+		count++;
+	}
+
 	if (count) {
 		out("create(%s): allocated %lu records (of size %zu)",
 			path, count, sizeof(struct data_s));
@@ -150,7 +164,7 @@ do_create(const char *path, const char *layout)
 		out("create(%s): pool is full", path);
 	}
 
-	pmemobj_close(pop);
+	util_poolset_close(set, DO_NOT_DELETE_PARTS);
 }
 
 
@@ -158,12 +172,15 @@ do_create(const char *path, const char *layout)
  * do_verify -- (internal) verify a poolset
  */
 static void
-do_verify(const char *path, const char *layout)
+do_verify(const char *path)
 {
-	PMEMobjpool *pop;
+	PMEMobjpool *pop = NULL;
 	PMEMoid oid;
 	uint64_t count = 0;
 	int error = 0;
+	const char *layout = NULL;
+
+	record_constructor();
 
 	if ((pop = pmemobj_open(path, layout)) == NULL) {
 		out("!%s: pmemobj_open: %s",
@@ -214,7 +231,7 @@ main(int argc, char *argv[])
 	out_init("OBJ_VERIFY", "OBJ_VERIFY", "", 1, 0);
 
 	if (argc < 4) {
-		out("Usage: %s <obj_pool> <layout> <op:c|v>\n"
+		out("Usage: %s <obj_pool> <op:c|v>\n"
 		    "Options:\n"
 		    "   c - create\n"
 		    "   v - verify\n",
@@ -223,7 +240,6 @@ main(int argc, char *argv[])
 	}
 
 	const char *path = argv[1];
-	const char *layout = argv[2];
 	const char *op;
 
 	/*
@@ -234,7 +250,7 @@ main(int argc, char *argv[])
 	setenv("PMEM_IS_PMEM_FORCE", "1", 1 /* overwrite */);
 
 	/* go through all arguments one by one */
-	for (int arg = 3; arg < argc; arg++) {
+	for (int arg = 2; arg < argc; arg++) {
 		op = argv[arg];
 
 		if (op[1] != '\0') {
@@ -244,11 +260,11 @@ main(int argc, char *argv[])
 
 		switch (op[0]) {
 		case 'c': /* create and verify (no debug) */
-			do_create(path, layout);
+			do_create(path);
 			break;
 
 		case 'v': /* verify (no debug) */
-			do_verify(path, layout);
+			do_verify(path);
 			break;
 
 		default:
