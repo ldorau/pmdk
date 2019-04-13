@@ -42,11 +42,31 @@ set -e
 
 # Build all and run tests
 cd $WORKDIR
-make check-license
-make cstyle
-make -j2 USE_LIBUNWIND=1
-make -j2 test USE_LIBUNWIND=1
-make -j2 pcheck TEST_BUILD=$TEST_BUILD
-make -j2 pycheck
-make DESTDIR=/tmp source
+# make check-license
+# make cstyle
 
+PROCS=2
+
+make -j$PROCS USE_LIBUNWIND=1
+make -j$PROCS test USE_LIBUNWIND=1
+cd src/test
+make -j$PROCS sync-remotes
+
+echo
+echo "#### START #### "
+echo
+
+PASS=0
+FAIL=0
+n=0
+while date; do
+	./RUNTESTS ex_librpmem_basic && PASS=$(($PASS + 1)) || FAIL=$(($FAIL + 1))
+	n=$((n + 1))
+	echo "##########################################################"
+	echo "# N=$n: $PASS passed $FAIL failed"
+	echo "##########################################################"
+done
+
+# make -j2 pcheck TEST_BUILD=$TEST_BUILD
+# make -j2 pycheck
+# make DESTDIR=/tmp source
