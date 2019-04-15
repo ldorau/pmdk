@@ -40,6 +40,8 @@ set -e
 # Prepare build environment
 ./prepare-for-build.sh
 
+/bin/bash -i
+
 # Build all and run tests
 cd $WORKDIR
 make check-license
