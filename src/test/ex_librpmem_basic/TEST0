@@ -46,6 +46,8 @@ require_node_libfabric 1 $RPMEM_PROVIDER
 
 setup
 
+export RPMEMD_LOG_LEVEL=debug
+
 init_rpmem_on_node 1 0
 
 POOLSET=pool.set
@@ -66,14 +68,32 @@ expect_normal_exit run_on_node 1 ./basic create ${NODE_ADDR[0]} $POOLSET
 expect_normal_exit run_on_node 1 ./basic open ${NODE_ADDR[0]} $POOLSET
 expect_normal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
 
-# opening / removing non existing pool
-expect_abnormal_exit run_on_node 1 "\"./basic open ${NODE_ADDR[0]} $POOLSET 2>>$LOG\""
-expect_abnormal_exit run_on_node 1 "\"./basic remove ${NODE_ADDR[0]} $POOLSET 2>>$LOG\""
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
 
-# double create
-expect_normal_exit run_on_node 1 ./basic create ${NODE_ADDR[0]} $POOLSET
-expect_abnormal_exit run_on_node 1 "\"./basic create ${NODE_ADDR[0]} $POOLSET 2>>$LOG\""
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
 
-check
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
 
-pass
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
+
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
+
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
+
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
+
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
+
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
+
+echo "$ expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET"
+expect_abnormal_exit run_on_node 1 ./basic remove ${NODE_ADDR[0]} $POOLSET
