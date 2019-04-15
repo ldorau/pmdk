@@ -334,6 +334,9 @@ rpmem_ssh_close(struct rpmem_ssh *rps)
 {
 	int ret, rv;
 
+	// ERR("Waiting 10 secs ...\n");
+	// sleep(10);
+
 	rv = rpmem_cmd_term(rps->cmd);
 	if (rv)
 		return rv;
@@ -345,8 +348,10 @@ rpmem_ssh_close(struct rpmem_ssh *rps)
 	rpmem_cmd_fini(rps->cmd);
 	free(rps);
 
-	if (WIFEXITED(ret))
+	if (WIFEXITED(ret)) {
+		ERR("WIFEXITED -- %d (%d)", ret, WEXITSTATUS(ret));
 		return WEXITSTATUS(ret);
+	}
 
 	if (WIFSIGNALED(ret)) {
 		ERR("signal received -- %d", WTERMSIG(ret));

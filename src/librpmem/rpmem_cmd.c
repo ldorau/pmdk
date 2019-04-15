@@ -216,6 +216,8 @@ rpmem_cmd_run(struct rpmem_cmd *cmd)
 		exit(EXIT_FAILURE);
 	}
 
+	ERR(">>> PID = %i", cmd->pid);
+
 	os_close(fd_in[0]);
 	os_close(fd_out[1]);
 	os_close(fd_err[1]);
@@ -265,6 +267,9 @@ rpmem_cmd_term(struct rpmem_cmd *cmd)
 	os_close(cmd->fd_err);
 
 	RPMEM_ASSERT(cmd->pid > 0);
+
+	RPMEM_LOG(ERR, ">>> Sending SIGINT to PID = %i", cmd->pid);
+
 	int rv = kill(cmd->pid, SIGINT);
 	if (rv)
 		RPMEM_LOG(ERR, "!kill failed");

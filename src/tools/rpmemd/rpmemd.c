@@ -808,6 +808,7 @@ main(int argc, char *argv[])
 	rpmemd_obc_fini(rpmemd->obc);
 	free(rpmemd);
 
+	RPMEMD_LOG(ERR, "811: rpmemd SUCCEEDED !!!");
 	return 0;
 err:
 	rpmemd_req_cleanup(rpmemd);
@@ -818,6 +819,7 @@ err_db_init:
 err_log_init_config:
 	rpmemd_config_free(&rpmemd->config);
 err_config:
+	RPMEMD_LOG(ERR, "822: rpmemd failed (ret = %i)", ret);
 	rpmemd_log_close();
 err_log_init:
 	if (send_status) {

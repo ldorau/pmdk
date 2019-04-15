@@ -404,6 +404,9 @@ rpmemd_db_pool_remove(struct rpmemd_db *db, const char *pool_desc,
 
 	util_mutex_lock(&db->lock);
 
+	RPMEMD_LOG(ERR, "Waiting 10 secs ...");
+	sleep(10);
+
 	struct rm_cb_args args;
 	args.force = force;
 	args.ret = 0;
