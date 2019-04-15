@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018, Intel Corporation
+ * Copyright 2016-2019, Intel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -808,6 +808,9 @@ main(int argc, char *argv[])
 	rpmemd_obc_fini(rpmemd->obc);
 	free(rpmemd);
 
+	RPMEMD_LOG(ERR, ">>> sleep(1)");
+	sleep(1);
+
 	return 0;
 err:
 	rpmemd_req_cleanup(rpmemd);
@@ -828,5 +831,8 @@ err_log_init:
 err_obc:
 	free(rpmemd);
 err_rpmemd:
+	RPMEMD_LOG(ERR, ">>> sleep(1)");
+	sleep(1);
+
 	return ret;
 }
