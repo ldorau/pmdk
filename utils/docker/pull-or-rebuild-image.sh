@@ -106,6 +106,35 @@ for file in $files; do echo $file; done
 images_dir_name=images
 base_dir=utils/docker/$images_dir_name
 
+		# Rebuild Docker image for the current OS version
+		echo "Rebuilding the Docker image for the Dockerfile.$OS-$OS_VER"
+		pushd $images_dir_name
+		./build-image.sh ${OS}-${OS_VER}
+		popd
+
+		# Check if the image has to be pushed to Docker Hub
+		# (i.e. the build is triggered by commits to the $GITHUB_REPO
+		# repository's master branch, and the Travis build is not
+		# of the "pull_request" type). In that case, create the empty
+		# file.
+		if [[ "$TRAVIS_REPO_SLUG" == "$GITHUB_REPO" \
+			&& $TRAVIS_BRANCH == "master" \
+			&& $TRAVIS_EVENT_TYPE != "pull_request"
+			&& $PUSH_IMAGE == "1" ]]
+		then
+			echo "The image will be pushed to Docker Hub"
+			touch push_image_to_repo_flag
+		else
+			echo "Skip pushing the image to Docker Hub"
+		fi
+
+		if [[ $PUSH_IMAGE == "1" ]]
+		then
+			echo "Skip build package check if image has to be pushed"
+			touch skip_build_package_check
+		fi
+		exit 0
+
 # Check if committed file modifications require the Docker image to be rebuilt
 for file in $files; do
 	# Check if modified files are relevant to the current build
