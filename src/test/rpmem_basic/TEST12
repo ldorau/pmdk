@@ -38,6 +38,8 @@
 # standard unit test setup
 . ../unittest/unittest.sh
 
+export RPMEMD_LOG_LEVEL=debug
+
 require_test_type medium
 
 SETUP_MANUAL_INIT_RPMEM=1
