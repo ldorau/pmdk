@@ -2065,9 +2065,9 @@ function run_command()
 	local COMMAND="$*"
 	if [ "$VERBOSE" != "0" ]; then
 		echo "$ $COMMAND"
-		$COMMAND
+		eval $COMMAND
 	else
-		$COMMAND
+		eval $COMMAND
 	fi
 }
 
