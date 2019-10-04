@@ -30,19 +30,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
+set -ex
 
 source `dirname $0`/valid-branches.sh
 
-BOT_NAME="pmem-bot"
+VER="1.7"
+
+BOT_NAME="ldorau"
 USER_NAME="pmem"
 REPO_NAME="pmdk"
 
-ORIGIN="https://${GITHUB_TOKEN}@github.com/${BOT_NAME}/${REPO_NAME}"
+ORIGIN="https://github.com/${BOT_NAME}/${REPO_NAME}"
 UPSTREAM="https://github.com/${USER_NAME}/${REPO_NAME}"
 # master or stable-* branch
-TARGET_BRANCH=${TRAVIS_BRANCH}
-VERSION=${TARGET_BRANCHES[$TARGET_BRANCH]}
+
+TARGET_BRANCH="stable-${VER}"
+
+VERSION="v${VER}"
 
 if [ -z $VERSION ]; then
 	echo "Target location for branch $TARGET_BRANCH is not defined."
@@ -53,6 +57,8 @@ fi
 git clone ${ORIGIN}
 cd ${REPO_NAME}
 git remote add upstream ${UPSTREAM}
+
+git fetch upstream --tags
 
 git config --local user.name ${BOT_NAME}
 git config --local user.email "pmem-bot@intel.com"
@@ -69,7 +75,7 @@ git push -f ${ORIGIN} ${TARGET_BRANCH}
 
 # Makes pull request.
 # When there is already an open PR or there are no changes an error is thrown, which we ignore.
-hub pull-request -f -b ${USER_NAME}:${TARGET_BRANCH} -h ${BOT_NAME}:${TARGET_BRANCH} -m "doc: automatic $TARGET_BRANCH docs update" && true
+# hub pull-request -f -b ${USER_NAME}:${TARGET_BRANCH} -h ${BOT_NAME}:${TARGET_BRANCH} -m "doc: automatic $TARGET_BRANCH docs update" && true
 
 git clean -dfx
 
@@ -109,6 +115,6 @@ git add -A
 git commit -m "doc: automatic gh-pages docs update" && true
 git push -f ${ORIGIN} $GH_PAGES_NAME
 
-hub pull-request -f -b ${USER_NAME}:gh-pages -h ${BOT_NAME}:${GH_PAGES_NAME} -m "doc: automatic gh-pages docs update" && true
+# hub pull-request -f -b ${USER_NAME}:gh-pages -h ${BOT_NAME}:${GH_PAGES_NAME} -m "doc: automatic gh-pages docs update" && true
 
 exit 0

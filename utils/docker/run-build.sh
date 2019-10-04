@@ -42,6 +42,11 @@ set -e
 
 # Build all and run tests
 cd $WORKDIR
+
+echo "Running auto doc update"
+./utils/docker/run-doc-update.sh
+exit 0
+
 make check-license
 make cstyle
 make -j2
@@ -49,9 +54,3 @@ make -j2 test
 make -j2 pcheck TEST_BUILD=$TEST_BUILD
 make -j2 pycheck
 make DESTDIR=/tmp source
-
-# Create PR with generated docs
-if [[ "$AUTO_DOC_UPDATE" == "1" ]]; then
-	echo "Running auto doc update"
-	./utils/docker/run-doc-update.sh
-fi
