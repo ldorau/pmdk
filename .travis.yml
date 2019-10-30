@@ -41,8 +41,7 @@ before_install:
   - ./pull-or-rebuild-image.sh
 
 script:
-  - ./build-travis.sh
+  - images/push-image.sh $OS-$OS_VER
 
 after_success:
-  - source ./set-vars.sh
-  - if [[ -f $CI_FILE_PUSH_IMAGE_TO_REPO ]]; then ./images/push-image.sh $OS-$OS_VER; fi
+  - date
