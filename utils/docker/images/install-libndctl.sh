@@ -44,9 +44,18 @@ rm -rf $RPMDIR
 
 else
 
+echo "==== set libdir ===="
+OS_OPTIONS=""
+OS_BASE=$(echo $OS | cut -d'-' -f1)
+case $OS_BASE in
+	centos|opensuse)
+		OS_OPTIONS="--libdir=/usr/lib64"
+		;;
+esac
+
 echo "==== build ndctl ===="
 ./autogen.sh
-./configure --disable-docs
+./configure --disable-docs $OS_OPTIONS
 make -j$(nproc)
 
 echo "==== install ndctl ===="
