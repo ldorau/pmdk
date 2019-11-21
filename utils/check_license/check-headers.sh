@@ -76,7 +76,8 @@ fi
 exit_if_not_exist $LICENSE
 exit_if_not_exist $CHECK_LICENSE
 
-export GIT="git -C ${SOURCE_ROOT}"
+cd ${SOURCE_ROOT}
+export GIT="git"
 $GIT rev-parse || exit 1
 
 if [ -f $SOURCE_ROOT/.git/shallow ]; then
