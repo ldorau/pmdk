@@ -1,0 +1,35 @@
+name: CentOS-7
+on: [push]
+
+env:
+    REPO:       pmdk
+    OS:         centos
+    OS_VER:     7
+    TEST_BUILD: debug
+    #
+    #
+    HOST_WORKDIR:   /home/runner/work/pmdk/pmdk
+    GITHUB_REPO:    pmem/pmdk
+    DOCKERHUB_REPO: ldorau/pmdk
+    PMDK_CC:        gcc
+    PMDK_CXX:       g++
+    VALGRIND:       1
+    MAKE_PKG:       0
+    REMOTE_TESTS:   0
+
+jobs:
+  build:
+    name: test-centos-7
+    runs-on: ubuntu-latest
+    steps:
+       - name: Clone the git repo
+         uses: actions/checkout@v1
+
+       - name: Change ownership of the repo
+         run: sudo chown -R 1000.1000 $HOST_WORKDIR
+
+       - name: Pull or rebuild the image
+         run: utils/docker/pull-or-rebuild-image.sh
+
+       - name: Run build
+         run: utils/docker/build-travis.sh
