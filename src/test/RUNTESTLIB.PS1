@@ -39,13 +39,31 @@ class Config {
     [String] $testtype
     [String] $fstype
     [timespan] $timeout
-    [string]$testfile
+    [string] $testfile
     [bool] $check_pool
     [string] $skip_dir
     [Object[]] $testdir
     [bool] $checkfs
     [bool] $forcefs
     [string] $verbose
+
+    #
+    # Config -- constructor
+    #
+    Config() {
+        $this.dryrun = 0
+        $this.buildtype = ""
+        $this.testtype = ""
+        $this.fstype = ""
+        $this.timeout = [timespan]::FromSeconds(0)
+        $this.testfile = ""
+        $this.check_pool = 0
+        $this.skip_dir = ""
+        $this.testdir = Get-ChildItem -Directory
+        $this.checkfs = 0
+        $this.forcefs = 0
+        $this.verbose = ""
+    }
 
     #
     # setTimeout -- parse timeout
