@@ -66,6 +66,7 @@ extern "C" {
 /*
  * XXX - workaround for offsetof issue in VS 15.3
  */
+#define PMEMOBJ_OFFSETOF_WA 1
 #ifdef PMEMOBJ_OFFSETOF_WA
 #ifdef _CRT_USE_BUILTIN_OFFSETOF
 #undef offsetof
