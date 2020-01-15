@@ -7,7 +7,7 @@
 # when we decide to switch from Travis to GitHub Actions. The 'XXX_DISABLE_' suffix should be removed then.
 #
 
-name: PMDK
+name: test WIN
 on: [push, pull_request]
 
 env:
@@ -28,17 +28,27 @@ jobs:
       perl: "C:\\Strawberry\\perl\\bin"
     strategy:
       matrix:
-        CONFIG: [Debug, Release]
+        CONFIG: [Debug] # , Release]
     steps:
        - name: Update Path
          run: |
            echo "::add-path::$Env:msbuild"
            echo "::add-path::$Env:perl"
 
+       - name: Cache PMDK
+         uses: actions/cache@v1
+         id: cache-pmdk
+         with:
+            path: D:/a/pmdk
+            key:  pmdk-2
+
        - name: Clone the git repo
-         uses: actions/checkout@v1
+         uses: actions/checkout@v2
+         with:
+           clean: false
 
        - name: Various debug checks (cstyle, whitespace etc.)
+         if: steps.cache-pmdk.outputs.cache-hit != 'true'
          run: |
            if ("${{ matrix.CONFIG }}" -eq "Debug")
            {
@@ -66,10 +76,11 @@ jobs:
            }
 
        - name: Build
+         if: steps.cache-pmdk.outputs.cache-hit != 'true'
          run: |
            msbuild src\$Env:solutionname -property:Configuration=${{ matrix.CONFIG }},PlatformToolset=$Env:platform_toolset -m -v:m
            msbuild src\examples\$Env:ex_solutionname -property:Configuration=${{ matrix.CONFIG }},PlatformToolset=$Env:platform_toolset -m -v:m
 
        - name: Create ZIP archive
+         if: steps.cache-pmdk.outputs.cache-hit != 'true'
          run: utils/CREATE-ZIP.ps1 -b ${{ matrix.CONFIG }}
-
