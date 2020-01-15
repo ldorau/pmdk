@@ -78,13 +78,11 @@ jobs:
        - name: Clone the git repo
          uses: actions/checkout@v1
 
-       - name: Install PsScriptAnalyzer
-         run: Install-Module PsScriptAnalyzer -Force
-
-       - name: Various checks (cstyle, whitespace etc.)
+       - name: Various debug checks (cstyle, whitespace etc.)
          run: |
            if ("${{ matrix.CONFIG }}" -eq "Debug")
            {
+              Install-Module PsScriptAnalyzer -Force
               utils/CSTYLE.ps1
               if ($LASTEXITCODE -ne 0) {
                  exit 1
