@@ -44,7 +44,8 @@ ENV EXAMPLES_DEPS "libfuse-dev \
 	libuv1-dev"
 
 # documentation (optional)
-ENV DOC_DEPS pandoc
+ENV DOC_DEPS "man \
+	pandoc"
 
 # tests
 ENV TESTS_DEPS "bc \
