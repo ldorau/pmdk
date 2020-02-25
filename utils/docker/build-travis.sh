@@ -9,7 +9,7 @@
 # this script is for building PMDK on Travis only
 #
 
-set -e
+set -ex
 
 source $(dirname $0)/set-ci-vars.sh
 source $(dirname $0)/set-vars.sh
