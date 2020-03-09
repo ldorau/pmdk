@@ -7,7 +7,7 @@
 #                and starts a build of PMDK project.
 #
 
-set -e
+set -ex
 
 # Prepare build environment
 ./prepare-for-build.sh

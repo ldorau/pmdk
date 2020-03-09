@@ -7,7 +7,7 @@
 #                      and ssh server for use during build of PMDK project.
 #
 
-set -e
+set -ex
 
 # Configure tests
 cat << EOF > $WORKDIR/src/test/testconfig.sh

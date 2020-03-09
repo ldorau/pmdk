@@ -8,7 +8,7 @@
 #                        running build of PMDK project.
 #
 
-set -e
+set -ex
 
 # Mount filesystem for tests
 echo $USERPASS | sudo -S mount -t tmpfs none /tmp -osize=6G
