@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2016-2019, Intel Corporation
+# Copyright 2016-2020, Intel Corporation
 
 #
 # configure-tests.sh - is called inside a Docker container; configures tests
@@ -8,6 +8,15 @@
 #
 
 set -ex
+
+if [ -z "$WORKDIR" ]; then
+	echo Error: WORKDIR is not set.
+	exit 1
+fi
+if [ ! -d "$WORKDIR" ]; then
+	echo "Error: WORKDIR ($WORKDIR) does not exist or it is not a directory."
+	exit 1
+fi
 
 # Configure tests
 cat << EOF > $WORKDIR/src/test/testconfig.sh
@@ -56,23 +65,42 @@ Host 127.0.0.1
 	ControlPersist 10m
 EOF
 
-	if [ ! -f /etc/ssh/ssh_host_rsa_key ]
-	then
-		(echo $USERPASS | sudo -S ssh-keygen -t rsa -C $USER@$HOSTNAME -P '' -f /etc/ssh/ssh_host_rsa_key)
+	PUB_KEY=/etc/ssh/ssh_host_rsa_key.pub
+	PRIV_KEY=/etc/ssh/ssh_host_rsa_key
+	AUTH_KEYS=/etc/ssh/authorized_keys
+	if [ ! -f $PRIV_KEY ]; then
+		(echo $USERPASS | sudo -S ssh-keygen -t rsa -C $USER@$HOSTNAME -P '' -f $PRIV_KEY)
 	fi
-	echo $USERPASS | sudo -S sh -c 'cat /etc/ssh/ssh_host_rsa_key.pub >> /etc/ssh/authorized_keys'
-	ssh-keygen -t rsa -C $USER@$HOSTNAME -P '' -f ~/.ssh/id_rsa
-	cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+	if [ ! -f $AUTH_KEYS ] || ! cat $AUTH_KEYS | grep -q -e "$(cat $PUB_KEY)"; then
+		echo $USERPASS | sudo -S sh -c "cat $PUB_KEY >> $AUTH_KEYS"
+	fi
+
+	PUB_KEY=~/.ssh/id_rsa.pub
+	PRIV_KEY=~/.ssh/id_rsa
+	AUTH_KEYS=~/.ssh/authorized_keys
+	if [ ! -f $PRIV_KEY ]; then
+		ssh-keygen -t rsa -C $USER@$HOSTNAME -P '' -f $PRIV_KEY
+	fi
+	if [ ! -f $AUTH_KEYS ] || ! cat $AUTH_KEYS | grep -q -e "$(cat $PUB_KEY)"; then
+		cat $PUB_KEY >> $AUTH_KEYS
+	fi
+
 	chmod -R 700 ~/.ssh
 	chmod 640 ~/.ssh/authorized_keys
 	chmod 600 ~/.ssh/config
 
-	# Start ssh service
-	echo $USERPASS | sudo -S $START_SSH_COMMAND
+	if [ "$(ps -U root -u root u | grep sshd)" == "" ]; then
+		if [ -z "$START_SSH_COMMAND" ]; then
+			echo Error: START_SSH_COMMAND is not set.
+			exit 1
+		fi
+		# Start ssh service
+		echo $USERPASS | sudo -S $START_SSH_COMMAND
+	fi
 
 	ssh 127.0.0.1 exit 0
 else
-	echo "Skipping remote tests"
+	echo "Skipping remote tests (because REMOTE_TESTS is not set)"
 	echo
 	echo "Removing all libfabric.pc files in order to simulate that libfabric is not installed:"
 	find /usr -name "libfabric.pc" 2>/dev/null || true
