@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2015-2019, Intel Corporation
+# Copyright 2015-2020, Intel Corporation
 
 #
 # examples/Makefile.inc -- build the Persistent Memory Development Kit examples
@@ -68,13 +68,16 @@ clobber-libraries: clean-libraries
 
 clobber-progs clobber-libraries:
 ifneq ($(PROGS),)
+	echo "$(RM) $(PROGS) (71)"
 	$(RM) $(PROGS)
 endif
 ifneq ($(LIBRARIES),)
+	echo "$(RM) $(DYNAMIC_LIBRARIES) $(STATIC_LIBRARIES) (75)"
 	$(RM) $(DYNAMIC_LIBRARIES) $(STATIC_LIBRARIES)
 endif
 
 clean-progs clean-libraries:
+	echo "$(RM) *.o $(TMP_HEADERS) (80)"
 	$(RM) *.o $(TMP_HEADERS)
 
 MAKEFILE_DEPS=Makefile $(TOP)/src/examples/Makefile.inc $(TOP)/src/common.inc
