@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2018-2019, Intel Corporation
+# Copyright 2018-2020, Intel Corporation
 
 #
 # src/test/common_badblock.sh -- commons for the following tests:
@@ -17,14 +17,15 @@ COMMAND_MOUNTED_DIRS="\
 	mount | grep -e $UNITTEST_DIRNAME | cut -d' ' -f1 | xargs && true"
 
 COMMAND_NDCTL_NFIT_TEST_INIT="\
-	sudo modprobe nfit_test &>>$PREP_LOG_FILE && \
+	sudo insmod /lib/modules/5.5.8-arch1-1-bb/extra/nfit.ko.xz &>>$PREP_LOG_FILE && \
+	sudo modprobe -v nfit_test &>>$PREP_LOG_FILE && \
 	sudo ndctl disable-region all &>>$PREP_LOG_FILE && \
 	sudo ndctl zero-labels all &>>$PREP_LOG_FILE && \
 	sudo ndctl enable-region all &>>$PREP_LOG_FILE"
 
 COMMAND_NDCTL_NFIT_TEST_FINI="\
 	sudo ndctl disable-region all &>>$PREP_LOG_FILE && \
-	sudo modprobe -r nfit_test &>>$PREP_LOG_FILE"
+	sudo modprobe -v -r nfit_test &>>$PREP_LOG_FILE"
 
 #
 # badblock_test_init -- initialize badblock test based on underlying hardware
@@ -243,11 +244,11 @@ function real_pmem_get_block_device_node() {
 #
 function ndctl_nfit_test_init() {
 	sudo ndctl disable-region all &>>$PREP_LOG_FILE
-	if ! sudo modprobe -r nfit_test &>>$PREP_LOG_FILE; then
+	if ! sudo modprobe -v -r nfit_test &>>$PREP_LOG_FILE; then
 		MOUNTED_DIRS="$(eval $COMMAND_MOUNTED_DIRS)"
 		[ "$MOUNTED_DIRS" ] && sudo umount $MOUNTED_DIRS
 		sudo ndctl disable-region all &>>$PREP_LOG_FILE
-		sudo modprobe -r nfit_test
+		sudo modprobe -v -r nfit_test
 	fi
 	expect_normal_exit $COMMAND_NDCTL_NFIT_TEST_INIT
 }
@@ -258,12 +259,12 @@ function ndctl_nfit_test_init() {
 #
 function ndctl_nfit_test_init_node() {
 	run_on_node $1 "sudo ndctl disable-region all &>>$PREP_LOG_FILE"
-	if ! run_on_node $1 "sudo modprobe -r nfit_test &>>$PREP_LOG_FILE"; then
+	if ! run_on_node $1 "sudo modprobe -v -r nfit_test &>>$PREP_LOG_FILE"; then
 		MOUNTED_DIRS="$(run_on_node $1 "$COMMAND_MOUNTED_DIRS")"
 		run_on_node $1 "\
 			[ \"$MOUNTED_DIRS\" ] && sudo umount $MOUNTED_DIRS; \
 			sudo ndctl disable-region all &>>$PREP_LOG_FILE; \
-			sudo modprobe -r nfit_test"
+			sudo modprobe -v -r nfit_test"
 	fi
 	expect_normal_exit run_on_node $1 "$COMMAND_NDCTL_NFIT_TEST_INIT"
 }
