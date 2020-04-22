@@ -23,6 +23,7 @@ jobs:
       VALGRIND:       1
       SRC_CHECKERS:   0
     strategy:
+      fail-fast: false
       matrix:
         CONFIG: ["N=1 OS=ubuntu OS_VER=19.10 FAULT_INJECTION=1 TEST_BUILD=debug",
                  "N=2 OS=ubuntu OS_VER=19.10 FAULT_INJECTION=1 TEST_BUILD=nondebug UBSAN=1",
