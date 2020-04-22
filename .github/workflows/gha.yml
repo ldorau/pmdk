@@ -109,7 +109,12 @@ jobs:
            msbuild src\examples\$Env:ex_solutionname -property:Configuration=${{ matrix.CONFIG }},PlatformToolset=$Env:platform_toolset -m -v:m
 
        - name: Create ZIP archive
-         run: utils/CREATE-ZIP.ps1 -b ${{ matrix.CONFIG }}
+         shell: powershell
+         run: |
+           if ($true) {
+               Set-PSDebug -Trace 2
+               ./utils/CREATE-ZIP.ps1 -b ${{ matrix.CONFIG }}
+           }
 
        - name: Run tests
          shell: powershell
