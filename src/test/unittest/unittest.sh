@@ -3674,6 +3674,8 @@ function require_badblock_tests_enabled() {
 		# pool replica - hence 'any' filesystem is required.
 		if [ $1 == "dax_device" ]; then
 			require_fs_type any
+			msg "$UNITTEST_NAME: SKIP: nfit_test DAX device - BUG !"
+			exit 0
 
 		# nfit_test block device is created by the test and mounted on
 		# a filesystem of any type provided by the user
