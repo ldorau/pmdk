@@ -2671,6 +2671,40 @@ function require_mmap_under_valgrind() {
 }
 
 #
+# check_bad_blocks -- check bad blocks (count, offset and length)
+#
+function check_bad_blocks {
+
+	# check if tests using 'sudo' are enabled in testconfig.sh (ENABLE_SUDO_TESTS)"
+	if [ "$ENABLE_SUDO_TESTS" != "y" ]; then
+		return
+	fi
+
+	# check if 'sudo' is allowed
+	if ! sh -c "timeout --signal=SIGKILL --kill-after=3s 3s sudo date" >/dev/null 2>&1; then
+		return
+	fi
+
+	# check if ndctl is available
+	if ! ndctl -v > /dev/null; then
+		return
+	fi
+
+	if [ "$NAMESPACE" != "" ]; then
+		NS="-n $NAMESPACE"
+	else
+		# check all namespaces
+		NS="-N"
+	fi
+
+	# check if there are any bad blocks
+	sudo ndctl list -M $NS | grep -e "badblock_count" \
+		&& echo "Error: bad blocks have not been cleared!" \
+		&& sudo ndctl list -M $NS \
+		&& exit 1 || true
+}
+
+#
 # setup -- print message that test setup is commencing
 #
 function setup() {
@@ -2714,6 +2748,8 @@ function setup() {
 	[ -n "$RPMEM_PM" ] && PM="/$RPMEM_PM"
 
 	msg "$UNITTEST_NAME: SETUP ($TEST/$REAL_FS/$BUILD$MCSTR$PROV$PM)"
+
+	check_bad_blocks setup
 
 	for f in $(get_files ".*[a-zA-Z_]${UNITTEST_NUM}\.log"); do
 		rm -f $f
@@ -2780,6 +2816,8 @@ function match() {
 # check -- check local or remote test results (using .match files)
 #
 function check() {
+	check_bad_blocks check
+
 	if [ $NODES_MAX -lt 0 ]; then
 		check_local
 	else
@@ -2821,6 +2859,8 @@ function check() {
 # pass -- print message that the test has passed
 #
 function pass() {
+	check_bad_blocks pass
+
 	if [ "$DEVDAX_TO_LOCK" == 1 ]; then
 		unlock_devdax
 	fi
