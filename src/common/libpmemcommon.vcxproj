@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\libpmem2\auto_flush_windows.c" />
     <ClCompile Include="..\libpmem2\usc_windows.c" />
-    <ClCompile Include="badblock_none.c" />
+    <ClCompile Include="badblocks.c" />
     <ClCompile Include="set_badblocks.c" />
     <ClCompile Include="ctl.c" />
     <ClCompile Include="ctl_cow.c" />

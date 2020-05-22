@@ -11,7 +11,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="badblock_none.c">
+    <ClCompile Include="badblocks.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="set_badblocks.c">

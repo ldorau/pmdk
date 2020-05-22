@@ -28,7 +28,7 @@
     <ClCompile Include="..\..\src\libpmemobj\tx.c" />
     <ClCompile Include="..\core\alloc.c" />
     <ClCompile Include="..\common\set_badblocks.c" />
-    <ClCompile Include="..\common\badblock_none.c" />
+    <ClCompile Include="..\common\badblocks.c" />
     <ClCompile Include="..\common\ctl.c" />
     <ClCompile Include="..\common\ctl_cow.c" />
     <ClCompile Include="..\common\ctl_prefault.c" />
