@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+#include "libpmem2.h"
 #include "common.h"
 #include "output.h"
 #include "out.h"
@@ -538,7 +539,7 @@ pmempool_info_badblocks(struct pmem_info *pip, const char *file_name, int v)
 
 	ret = badblocks_get(file_name, bbs);
 	if (ret) {
-		if (errno == ENOTSUP) {
+		if (errno == PMEM2_E_NOSUPP) {
 			outv(v, BB_NOT_SUPP "\n");
 			ret = -1;
 			goto exit_free;

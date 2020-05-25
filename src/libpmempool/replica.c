@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <libgen.h>
 
+#include "libpmem2.h"
 #include "obj.h"
 #include "palloc.h"
 #include "file.h"
@@ -1362,7 +1363,7 @@ replica_badblocks_check_or_clear(struct pool_set *set,
 
 		int bad_blocks_found = replica_badblocks_get(set, set_hs);
 		if (bad_blocks_found < 0) {
-			if (errno == ENOTSUP) {
+			if (errno == PMEM2_E_NOSUPP) {
 				LOG(1, BB_NOT_SUPP);
 				return -1;
 			}

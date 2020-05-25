@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "out.h"
+#include "libpmem2.h"
 #include "libpmempool.h"
 #include "pmempool.h"
 #include "pool.h"
@@ -40,7 +41,7 @@ check_bad_blocks(PMEMpoolcheck *ppc)
 	}
 
 	if (ret < 0) {
-		if (errno == ENOTSUP) {
+		if (errno == PMEM2_E_NOSUPP) {
 			ppc->result = CHECK_RESULT_CANNOT_REPAIR;
 			CHECK_ERR(ppc, BB_NOT_SUPP);
 			return;
