@@ -47,8 +47,9 @@ check_bad_blocks(PMEMpoolcheck *ppc)
 		}
 
 		ppc->result = CHECK_RESULT_ERROR;
-		CHECK_ERR(ppc, "checking poolset for bad blocks failed -- '%s'",
-				ppc->path);
+		CHECK_ERR(ppc,
+			"errno=%i checking poolset for bad blocks failed -- '%s'",
+			errno, ppc->path);
 		return;
 	}
 
