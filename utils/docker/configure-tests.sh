@@ -67,6 +67,9 @@ EOF
 	chmod 640 ~/.ssh/authorized_keys
 	chmod 600 ~/.ssh/config
 
+	# remove /var/run/nologin file
+	[ -f /var/run/nologin ] && echo $USERPASS | sudo -S rm /var/run/nologin
+
 	# Start ssh service
 	echo $USERPASS | sudo -S $START_SSH_COMMAND
 
