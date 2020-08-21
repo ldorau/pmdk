@@ -221,7 +221,7 @@ $(MANPAGES_WEBDIR_LINUX) $(MANPAGES_WEBDIR_WINDOWS):
 	../utils/md2man.sh $< default.man $@
 
 %.txt: %
-	man ./$< > $@
+	man -R utf8 -E utf8 -T ./$< > $@
 
 %.gz: %
 	gzip -nc ./$* > $@
