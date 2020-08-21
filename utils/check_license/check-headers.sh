@@ -34,7 +34,8 @@ if [ "$1" == "-h" -o "$1" == "--help" ]; then
 	exit 0
 fi
 
-export GIT="git -C ${SOURCE_ROOT}"
+cd ${SOURCE_ROOT}
+export GIT="git"
 $GIT rev-parse || exit 1
 
 if [ -f $SOURCE_ROOT/.git/shallow ]; then

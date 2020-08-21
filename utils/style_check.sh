@@ -86,7 +86,7 @@ function run_flake8() {
 	if [ $# -eq 0 ]; then
 		return
 	fi
-	${flake8_bin} --exclude=testconfig.py,envconfig.py $@
+	${flake8_bin} --exclude=testconfig.py,envconfig.py $@ || true
 }
 
 for ((i=1; i<$#; i++)) {
