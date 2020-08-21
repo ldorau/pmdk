@@ -11,22 +11,24 @@ services:
 env:
   global:
     - GITHUB_REPO=pmem/pmdk
-    - DOCKERHUB_REPO=pmem/pmdk
-    - OS=ubuntu
-    - OS_VER=19.10
+    - DOCKERHUB_REPO=ldorau/pmdk
     - MAKE_PKG=0
     - PMDK_CC=gcc
     - PMDK_CXX=g++
-    - REMOTE_TESTS=1
+    - REMOTE_TESTS=0
     - VALGRIND=1
     - SRC_CHECKERS=0
     - EXPERIMENTAL=n
   jobs:
-    - FAULT_INJECTION=1 TEST_BUILD=debug PUSH_IMAGE=1
-    - OS=fedora OS_VER=31 PMDK_CC=clang PMDK_CXX=clang++ TEST_BUILD=nondebug PUSH_IMAGE=1
-    - MAKE_PKG=1 REMOTE_TESTS=0 VALGRIND=0
-    - MAKE_PKG=1 REMOTE_TESTS=0 VALGRIND=0 OS=fedora OS_VER=31
-    - COVERAGE=1 FAULT_INJECTION=1 TEST_BUILD=debug
+    - OS=archlinux-base OS_VER=latest TEST_BUILD=debug
+    - OS=centos OS_VER=7 TEST_BUILD=debug
+    - OS=centos OS_VER=8 TEST_BUILD=debug
+    - OS=debian OS_VER=testing TEST_BUILD=debug PMDK_CC=clang-9 PMDK_CXX=clang++-9
+    - OS=debian OS_VER=unstable TEST_BUILD=debug PMDK_CC=clang-9 PMDK_CXX=clang++-9
+    - OS=fedora OS_VER=rawhide TEST_BUILD=debug
+    - OS=opensuse-leap OS_VER=latest TEST_BUILD=debug
+    - OS=opensuse-tumbleweed OS_VER=latest TEST_BUILD=debug
+    - OS=ubuntu OS_VER=rolling TEST_BUILD=debug
 
 before_install:
   - echo $TRAVIS_COMMIT_RANGE
@@ -35,8 +37,7 @@ before_install:
   - ./pull-or-rebuild-image.sh
 
 script:
-  - ./build-CI.sh
+  - images/push-image.sh
 
 after_success:
-  - source ./set-vars.sh
-  - if [[ -f $CI_FILE_PUSH_IMAGE_TO_REPO ]]; then ./images/push-image.sh; fi
+  - date
