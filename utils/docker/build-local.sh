@@ -35,7 +35,7 @@ export PMDK_CXX=${PMDK_CXX:-g++}
 export EXPERIMENTAL=${EXPERIMENTAL:-n}
 export VALGRIND=${VALGRIND:-1}
 export DOCKER_REPO=${DOCKER_REPO:-ghcr.io/pmem/pmdk}
-export GITHUB_REPO=${GITHUB_REPO:-pmem/pmdk}
+export UPSTREAM_REPOSITORY=${UPSTREAM_REPOSITORY:-pmem/pmdk}
 
 if [[ -z "$OS" || -z "$OS_VER" ]]; then
 	echo "ERROR: The variables OS and OS_VER have to be set " \

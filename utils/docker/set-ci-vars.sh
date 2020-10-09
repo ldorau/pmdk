@@ -44,7 +44,7 @@ if [ -n "$TRAVIS" ]; then
 
 	# CI_COMMIT_RANGE is usually invalid for force pushes - fix it when used
 	# with non-upstream repository
-	if [ -n "$CI_COMMIT_RANGE" -a "$CI_REPOSITORY" != "$GITHUB_REPO" ]; then
+	if [ -n "$CI_COMMIT_RANGE" -a "$CI_REPOSITORY" != "$UPSTREAM_REPOSITORY" ]; then
 		if ! git rev-list $CI_COMMIT_RANGE; then
 			CI_COMMIT_RANGE=$COMMIT_RANGE_FROM_LAST_MERGE
 		fi

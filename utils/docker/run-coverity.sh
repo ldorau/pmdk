@@ -8,7 +8,7 @@
 
 set -e
 
-if [[ "$CI_REPOSITORY" != "$GITHUB_REPO" \
+if [[ "$CI_REPOSITORY" != "$UPSTREAM_REPOSITORY" \
    && ( "$COVERITY_SCAN_NOTIFICATION_EMAIL" == "" \
      || "$COVERITY_SCAN_TOKEN" == "" ) ]]; then
 	echo

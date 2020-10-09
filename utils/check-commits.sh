@@ -12,10 +12,10 @@
 if [ -z "$1" ]; then
 	# on CI run this check only for pull requests
 	if [ -n "$CI_REPOSITORY" ]; then
-		if [[ "$CI_REPOSITORY" != "$GITHUB_REPO" \
+		if [[ "$CI_REPOSITORY" != "$UPSTREAM_REPOSITORY" \
 			|| $CI_EVENT_TYPE != "pull_request" ]];
 		then
-			echo "SKIP: $0 can only be executed for pull requests to $GITHUB_REPO"
+			echo "SKIP: $0 can only be executed for pull requests to $UPSTREAM_REPOSITORY"
 			exit 0
 		fi
 	fi

@@ -3,7 +3,7 @@ name: PMDK
 on: [push, pull_request]
 
 env:
-    GITHUB_REPO: pmem/pmdk
+    UPSTREAM_REPOSITORY: pmem/pmdk
     DOCKER_REPO: ghcr.io/pmem/pmdk
     GH_CR_USER:  ${{ secrets.GH_CR_USER }}
     GH_CR_PAT:   ${{ secrets.GH_CR_PAT }}

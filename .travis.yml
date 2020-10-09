@@ -10,7 +10,7 @@ services:
 
 env:
   global:
-    - GITHUB_REPO=pmem/pmdk
+    - UPSTREAM_REPOSITORY=pmem/pmdk
     - DOCKER_REPO=ghcr.io/pmem/pmdk
     - OS=ubuntu
     - OS_VER=19.10

@@ -62,8 +62,8 @@ if [[ -f $CI_FILE_SKIP_BUILD_PKG_CHECK ]]; then BUILD_PACKAGE_CHECK=n; else BUIL
 if [ -z "$NDCTL_ENABLE" ]; then ndctl_enable=; else ndctl_enable="--env NDCTL_ENABLE=$NDCTL_ENABLE"; fi
 if [[ $UBSAN -eq 1 ]]; then for x in C CPP LD; do declare EXTRA_${x}FLAGS=-fsanitize=undefined; done; fi
 
-# Only run doc update on $GITHUB_REPO master or stable branch
-if [[ -z "${CI_BRANCH}" || -z "${TARGET_BRANCHES[${CI_BRANCH}]}" || "$CI_EVENT_TYPE" == "pull_request" || "$CI_REPOSITORY" != "${GITHUB_REPO}" ]]; then
+# Only run doc update on $UPSTREAM_REPOSITORY master or stable branch
+if [[ -z "$CI_BRANCH" || -z "${TARGET_BRANCHES[$CI_BRANCH]}" || "$CI_EVENT_TYPE" == "pull_request" || "$CI_REPOSITORY" != "$UPSTREAM_REPOSITORY" ]]; then
 	AUTO_DOC_UPDATE=0
 fi
 
@@ -111,6 +111,7 @@ docker run --rm --name=$containerName -i $TTY \
 	--env EXTRA_LDFLAGS=$EXTRA_LDFLAGS \
 	--env REMOTE_TESTS=$REMOTE_TESTS \
 	--env TEST_BUILD=$TEST_BUILD \
+	--env UPSTREAM_REPOSITORY=$UPSTREAM_REPOSITORY \
 	--env WORKDIR=$WORKDIR \
 	--env EXPERIMENTAL=$EXPERIMENTAL \
 	--env BUILD_PACKAGE_CHECK=$BUILD_PACKAGE_CHECK \
@@ -127,7 +128,6 @@ docker run --rm --name=$containerName -i $TTY \
 	--env FAULT_INJECTION=$FAULT_INJECTION \
 	--env GITHUB_ACTIONS=$GITHUB_ACTIONS \
 	--env GITHUB_HEAD_REF=$GITHUB_HEAD_REF \
-	--env GITHUB_REPO=$GITHUB_REPO \
 	--env GITHUB_REPOSITORY=$GITHUB_REPOSITORY \
 	--env GITHUB_REF=$GITHUB_REF \
 	--env GITHUB_RUN_ID=$GITHUB_RUN_ID \

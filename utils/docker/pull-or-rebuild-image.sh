@@ -83,11 +83,11 @@ for file in $files; do
 		popd
 
 		# Check if the image has to be pushed to GitHub Container Registry
-		# (i.e. the build is triggered by commits to the $GITHUB_REPO
+		# (i.e. the build is triggered by commits to the $UPSTREAM_REPOSITORY
 		# repository's stable-* or master branch, and the Travis build is not
 		# of the "pull_request" type). In that case, create the empty
 		# file.
-		if [[ "$CI_REPOSITORY" == "$GITHUB_REPO" \
+		if [[ "$CI_REPOSITORY" == "$UPSTREAM_REPOSITORY" \
 			&& ($CI_BRANCH == stable-* || $CI_BRANCH == devel-* || $CI_BRANCH == master) \
 			&& $CI_EVENT_TYPE != "pull_request" \
 			&& $PUSH_IMAGE == "1" ]]
