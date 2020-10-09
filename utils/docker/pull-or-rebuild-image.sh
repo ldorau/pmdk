@@ -87,7 +87,7 @@ for file in $files; do
 		# repository's stable-* or master branch, and the Travis build is not
 		# of the "pull_request" type). In that case, create the empty
 		# file.
-		if [[ "$CI_REPO_SLUG" == "$GITHUB_REPO" \
+		if [[ "$CI_REPOSITORY" == "$GITHUB_REPO" \
 			&& ($CI_BRANCH == stable-* || $CI_BRANCH == devel-* || $CI_BRANCH == master) \
 			&& $CI_EVENT_TYPE != "pull_request" \
 			&& $PUSH_IMAGE == "1" ]]
